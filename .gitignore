@@ -16,6 +16,8 @@ build/
 .venv/
 venv/
 ENV/
+uv.lock
+install_log.txt
 
 # === IDE ===
 .vscode/
