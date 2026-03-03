@@ -1,46 +1,53 @@
 @echo off
+chcp 65001 >nul 2>&1
 REM ============================================================
-REM  VIPER — 一键启动脚本
-REM  双击此文件即可启动 Viper，无需手动激活任何环境
+REM  VIPER - Bioinformatics Audit Agent  [start.bat]
+REM  Double-click to launch. Closes Viper when you close this window.
 REM ============================================================
 
 title VIPER Audit Agent
 cd /d "%~dp0"
 
-REM --- 检查虚拟环境是否存在 ---
+REM --- Check virtual environment ---
 if not exist ".venv\Scripts\streamlit.exe" (
     echo.
-    echo  [!] 尚未安装依赖，正在自动安装，请稍等...
+    echo  [!] First run detected. Running setup...
     echo.
     call setup.bat
     if errorlevel 1 (
         echo.
-        echo  [错误] 安装失败，请查看上方报错信息。
+        echo  [ERROR] Setup failed. See messages above.
         pause
         exit /b 1
     )
 )
 
-REM --- 跳过 Streamlit 首次运行的邮件提示 ---
+REM --- Skip Streamlit email prompt ---
 if not exist "%USERPROFILE%\.streamlit\credentials.toml" (
     mkdir "%USERPROFILE%\.streamlit" 2>nul
     echo [general] > "%USERPROFILE%\.streamlit\credentials.toml"
     echo email = "" >> "%USERPROFILE%\.streamlit\credentials.toml"
 )
 
+REM --- Kill any existing process on port 8501 ---
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8501 " 2^>nul') do (
+    taskkill /f /pid %%a >nul 2>&1
+)
+timeout /t 1 /nobreak >nul
+
 echo.
 echo  ============================================================
 echo      VIPER  Bioinformatics Audit Agent
 echo  ============================================================
 echo.
-echo   启动中，浏览器将自动打开...
-echo   如未自动打开，请手动访问：http://localhost:8501
+echo   Starting... Browser will open automatically.
+echo   If not, visit: http://localhost:8501
 echo.
-echo   关闭此窗口即可停止 Viper
+echo   Close this window to stop Viper.
 echo  ============================================================
 echo.
 
-REM --- 直接使用 .venv 内的 streamlit，无需激活环境 ---
+REM --- Launch Streamlit directly from .venv (no activation needed) ---
 ".venv\Scripts\streamlit.exe" run app.py ^
     --server.port 8501 ^
     --server.headless false ^
@@ -48,3 +55,4 @@ REM --- 直接使用 .venv 内的 streamlit，无需激活环境 ---
     --theme.base dark
 
 pause
+

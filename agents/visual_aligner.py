@@ -13,32 +13,10 @@ from typing import Any
 from agents.state import WorkflowStage, FindingSeverity
 from config.prompts import VISUAL_ALIGNER_PROMPT
 from config.settings import Settings
+from utils.llm_factory import build_vision_llm
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-def _build_llm(multimodal: bool = False):
-    """构建 LLM 实例，multimodal=True 时使用视觉模型。"""
-    provider = Settings.get_llm_provider()
-    if provider == "google":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        model = Settings.DEFAULT_MODEL
-        return ChatGoogleGenerativeAI(
-            model=model,
-            google_api_key=Settings.GOOGLE_API_KEY,
-            temperature=Settings.LLM_TEMPERATURE,
-            max_output_tokens=Settings.LLM_MAX_TOKENS,
-        )
-    else:
-        from langchain_openai import ChatOpenAI
-        model = Settings.DEFAULT_MODEL
-        return ChatOpenAI(
-            model=model,
-            api_key=Settings.OPENAI_API_KEY,
-            temperature=Settings.LLM_TEMPERATURE,
-            max_tokens=Settings.LLM_MAX_TOKENS,
-        )
 
 
 def _encode_image_base64(image_path: str) -> str | None:
@@ -125,7 +103,7 @@ def visual_aligner_node(state: dict[str, Any]) -> dict[str, Any]:
     context = "\n\n".join(context_parts)
 
     try:
-        llm = _build_llm(multimodal=True)
+        llm = build_vision_llm()
         from langchain_core.messages import HumanMessage, SystemMessage
 
         # 构建消息（尝试包含图片）

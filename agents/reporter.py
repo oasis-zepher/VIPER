@@ -10,29 +10,10 @@ from typing import Any
 from agents.state import WorkflowStage, FindingSeverity
 from config.prompts import REPORTER_PROMPT
 from config.settings import Settings
+from utils.llm_factory import build_llm
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-def _build_llm():
-    provider = Settings.get_llm_provider()
-    if provider == "google":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        return ChatGoogleGenerativeAI(
-            model=Settings.DEFAULT_MODEL,
-            google_api_key=Settings.GOOGLE_API_KEY,
-            temperature=Settings.LLM_TEMPERATURE,
-            max_output_tokens=Settings.LLM_MAX_TOKENS,
-        )
-    else:
-        from langchain_openai import ChatOpenAI
-        return ChatOpenAI(
-            model=Settings.DEFAULT_MODEL,
-            api_key=Settings.OPENAI_API_KEY,
-            temperature=Settings.LLM_TEMPERATURE,
-            max_tokens=Settings.LLM_MAX_TOKENS,
-        )
 
 
 def reporter_node(state: dict[str, Any]) -> dict[str, Any]:
@@ -100,7 +81,7 @@ def reporter_node(state: dict[str, Any]) -> dict[str, Any]:
     context = "\n".join(context_parts)
 
     try:
-        llm = _build_llm()
+        llm = build_llm()
         from langchain_core.messages import HumanMessage, SystemMessage
 
         messages = [
