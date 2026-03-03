@@ -1,0 +1,67 @@
+# ============================================================
+#  VIPER Agent — .gitignore
+# ============================================================
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# === Virtual Environments ===
+.venv/
+venv/
+ENV/
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Environment & Secrets ===
+.env
+*.env.local
+
+# === Streamlit ===
+.streamlit/
+
+# === Data (不追踪大文件) ===
+projects/
+tmp_uploads/
+*.bam
+*.sam
+*.fastq
+*.fq
+*.fastq.gz
+*.fq.gz
+*.vcf
+
+# === R ===
+.Rhistory
+.Rdata
+.Rproj.user/
+*.Rproj
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Logs ===
+logs/
+*.log
+
+# === Results (可选追踪) ===
+# results/
+
+# === PyInstaller Build ===
+dist/
+build/
+*.spec.bak
+*.exe
