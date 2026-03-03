@@ -21,6 +21,13 @@ if not exist ".venv\Scripts\streamlit.exe" (
     )
 )
 
+REM --- 跳过 Streamlit 首次运行的邮件提示 ---
+if not exist "%USERPROFILE%\.streamlit\credentials.toml" (
+    mkdir "%USERPROFILE%\.streamlit" 2>nul
+    echo [general] > "%USERPROFILE%\.streamlit\credentials.toml"
+    echo email = "" >> "%USERPROFILE%\.streamlit\credentials.toml"
+)
+
 echo.
 echo  ============================================================
 echo      VIPER  Bioinformatics Audit Agent
