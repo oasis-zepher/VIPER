@@ -978,4 +978,8 @@ class MainWindow(ctk.CTkFrame):
             if not messagebox.askyesno(
                     "Quit", "Audit is still running. Quit anyway?"):
                 return
-        self.master.destroy()
+        try:
+            self.master.quit()
+            self.master.destroy()
+        except Exception:
+            pass

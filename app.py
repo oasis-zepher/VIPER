@@ -70,53 +70,67 @@ def _has_valid_key() -> bool:
     return False
 
 
-class ViperApp:
-    """应用生命周期管理器。"""
+def _write_crash_log(exc: BaseException) -> None:
+    """EXE 无 console 时写崩溃日志到用户目录。"""
+    import traceback
+    log_dir = Path.home() / ".viper"
+    log_dir.mkdir(exist_ok=True)
+    log_path = log_dir / "crash.log"
+    with open(log_path, "w", encoding="utf-8") as f:
+        traceback.print_exc(file=f)
+    # 尝试弹窗提示
+    try:
+        import tkinter.messagebox as mb
+        mb.showerror("VIPER — Crash", f"Startup failed:\n{exc}\n\nSee: {log_path}")
+    except Exception:
+        pass
 
-    def __init__(self) -> None:
-        self._root = ctk.CTk()
-        self._root.withdraw()   # 隐藏 Tk 根窗口，始终使用 Toplevel
+
+class ViperApp:
+    """
+    单根窗口架构：
+      - AuthWindow 本身继承 ctk.CTk，所以鉴权阶段它就是唯一的 Tk 根。
+      - 鉴权完成后销毁 AuthWindow，再创建新的 ctk.CTk() 承载主窗口。
+      - 直接有 Key 时跳过鉴权，直接创建 ctk.CTk() 主根。
+    """
 
     def run(self) -> None:
         if _has_valid_key():
-            self._open_main()
+            self._run_main()
         else:
-            self._open_auth()
-        self._root.mainloop()
+            # Phase-1: auth (AuthWindow IS a ctk.CTk root)
+            from ui.auth_window import AuthWindow
+            self._auth_win: AuthWindow | None = None
 
-    def _open_auth(self) -> None:
-        from ui.auth_window import AuthWindow
-        win = AuthWindow(on_auth_success=self._on_auth_success)
-        win.protocol("WM_DELETE_WINDOW", self._quit)
-        win.mainloop()   # 鉴权窗口独立事件循环
+            def on_success() -> None:
+                if self._auth_win is not None:
+                    self._auth_win.after(200, self._auth_win.destroy)
 
-    def _on_auth_success(self) -> None:
-        # 由 AuthWindow 在验证成功后通过 .after() 调用
-        # 此时 AuthWindow 还存在 — 先销毁它，再打开主窗口
-        # 我们在这里直接重启：关闭旧窗口，打开主窗口
-        self._open_main()
+            self._auth_win = AuthWindow(on_auth_success=on_success)
+            self._auth_win.mainloop()   # blocks until auth window destroyed
+            self._auth_win = None
 
-    def _open_main(self) -> None:
+            # Phase-2: main window (only if key now available)
+            if _has_valid_key():
+                self._run_main()
+
+    def _run_main(self) -> None:
         from ui.audit_engine import AuditEngine
         from ui.main_window import MainWindow
-        self._engine = AuditEngine()
-        self._root.deiconify()
-        MainWindow(self._root, self._engine)
-        self._root.protocol("WM_DELETE_WINDOW", self._quit)
-        self._root.lift()
-        self._root.focus_force()
 
-    def _quit(self) -> None:
-        try:
-            self._root.quit()
-            self._root.destroy()
-        except Exception:
-            pass
+        root = ctk.CTk()
+        engine = AuditEngine()
+        MainWindow(root, engine)   # packs itself fill=both; sets title/geometry/icon
+        root.mainloop()
 
 
 def main() -> None:
-    app = ViperApp()
-    app.run()
+    try:
+        app = ViperApp()
+        app.run()
+    except Exception as exc:
+        _write_crash_log(exc)
+        raise
 
 
 if __name__ == "__main__":
