@@ -61,14 +61,14 @@ class Settings:
     LARGE_FILE_THRESHOLD_MB: int = 500
     PREVIEW_ROWS: int            = 100
 
-    # ── Provider → (API-key attr, model prefix hints) ────────────────────────
+    # ── Provider → model name prefix hints (all lowercase) ─────────────────
     _PROVIDER_HINTS: dict = {
-        "google":    ["gemini"],
+        "google":    ["gemini"],           # gemini-2.5-pro, gemini-3.x, …
         "openai":    ["gpt", "o1", "o3", "o4"],
         "anthropic": ["claude"],
         "deepseek":  ["deepseek"],
-        "qwen":      ["qwen"],
-        "moonshot":  ["moonshot"],
+        "qwen":      ["qwen"],             # qwen-max, qwen3-235b, …
+        "moonshot":  ["moonshot", "kimi"], # kimi-latest, moonshot-v1-*
         "zhipu":     ["glm"],
     }
 

@@ -1,67 +1,65 @@
 @echo off
+chcp 65001 >nul 2>&1
 REM ============================================================
-REM  VIPER — 首次安装脚本
-REM  只需运行一次，之后直接用 start.bat 启动
+REM  VIPER - First-time Setup [setup.bat]
+REM  Run once. After that, use start.bat to launch Viper.
 REM ============================================================
 
 title VIPER Setup
 cd /d "%~dp0"
 
 echo.
-echo  ============================================================
-echo      VIPER Setup — 首次安装
-echo  ============================================================
+echo ============================================================
+echo   VIPER Setup - First-time Installation
+echo ============================================================
 echo.
 
-REM --- 检查 uv 是否可用 ---
+REM --- Step 1: Check / install uv ---
 where uv >nul 2>&1
 if errorlevel 1 (
-    echo  [步骤 1/3] 安装 uv 包管理器...
+    echo [Step 1/3] Installing uv package manager...
     powershell -ExecutionPolicy Bypass -Command "irm https://astral.sh/uv/install.ps1 | iex"
-    REM 刷新 PATH
     for /f "tokens=*" %%i in ('powershell -Command "[System.Environment]::GetEnvironmentVariable(\"Path\",\"User\")"') do set "PATH=%PATH%;%%i"
 ) else (
-    echo  [步骤 1/3] uv 已安装，跳过。
+    echo [Step 1/3] uv already installed. Skipping.
 )
 
-REM --- 创建虚拟环境 ---
+REM --- Step 2: Create virtual environment ---
 echo.
-echo  [步骤 2/3] 创建 Python 3.11 虚拟环境...
+echo [Step 2/3] Creating Python 3.11 virtual environment...
 uv venv .venv --python 3.11 --seed
 if errorlevel 1 (
-    echo  [错误] 创建虚拟环境失败！
+    echo [ERROR] Failed to create virtual environment.
     pause
     exit /b 1
 )
-echo  完成。
+echo [OK] Virtual environment created.
 
-REM --- 安装依赖 ---
+REM --- Step 3: Install dependencies ---
 echo.
-echo  [步骤 3/3] 安装依赖包（首次约需 3-8 分钟）...
+echo [Step 3/3] Installing packages (first run: ~3-8 min)...
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 if errorlevel 1 (
-    echo  [错误] 依赖安装失败，请检查网络连接！
+    echo [ERROR] Package installation failed. Check network and try again.
     pause
     exit /b 1
 )
+echo [OK] All packages installed.
 
-REM --- 复制 .env 模板 ---
+REM --- Copy .env template if missing ---
 if not exist ".env" (
     if exist ".env.example" (
         echo.
-        echo  [提示] 正在创建 .env 配置文件...
+        echo [INFO] Creating .env from template...
         copy ".env.example" ".env" >nul
-        echo  [!] 请用记事本打开 .env 填入你的 API Key：
-        echo      GOOGLE_API_KEY=你的Gemini_Key
-        echo.
+        echo [ACTION] Opening .env in Notepad - fill in your API Key.
         notepad .env
     )
 )
 
 echo.
-echo  ============================================================
-echo      安装完成！
-echo      运行 start.bat 启动 Viper
-echo  ============================================================
+echo ============================================================
+echo  [DONE] Setup complete! Run start.bat to launch Viper.
+echo ============================================================
 echo.
 pause

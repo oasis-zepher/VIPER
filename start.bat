@@ -1,8 +1,9 @@
 @echo off
+setlocal EnableDelayedExpansion
 chcp 65001 >nul 2>&1
 REM ============================================================
-REM  VIPER - Bioinformatics Audit Agent  [start.bat]
-REM  Double-click to launch. Closes Viper when you close this window.
+REM  VIPER - Bioinformatics Audit Agent [start.bat]
+REM  Double-click to launch. No manual env activation required.
 REM ============================================================
 
 title VIPER Audit Agent
@@ -11,45 +12,51 @@ cd /d "%~dp0"
 REM --- Check virtual environment ---
 if not exist ".venv\Scripts\streamlit.exe" (
     echo.
-    echo  [!] First run detected. Running setup...
+    echo [INFO] First run detected. Running setup...
     echo.
     call setup.bat
     if errorlevel 1 (
         echo.
-        echo  [ERROR] Setup failed. See messages above.
+        echo [ERROR] Setup failed. See logs above.
         pause
         exit /b 1
     )
 )
 
-REM --- Skip Streamlit email prompt ---
+REM --- Skip Streamlit onboarding email prompt ---
 if not exist "%USERPROFILE%\.streamlit\credentials.toml" (
     mkdir "%USERPROFILE%\.streamlit" 2>nul
     echo [general] > "%USERPROFILE%\.streamlit\credentials.toml"
     echo email = "" >> "%USERPROFILE%\.streamlit\credentials.toml"
 )
 
-REM --- Kill any existing process on port 8501 ---
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8501 " 2^>nul') do (
-    taskkill /f /pid %%a >nul 2>&1
+REM --- Pick a free port (start from 8501) ---
+set "PORT=8501"
+:check_port
+netstat -ano | findstr /R /C:":!PORT! .*LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    set /a PORT+=1
+    if !PORT! GTR 8600 (
+        echo [ERROR] No free port found in range 8501-8600.
+        pause
+        exit /b 1
+    )
+    goto check_port
 )
-timeout /t 1 /nobreak >nul
 
 echo.
-echo  ============================================================
-echo      VIPER  Bioinformatics Audit Agent
-echo  ============================================================
-echo.
-echo   Starting... Browser will open automatically.
-echo   If not, visit: http://localhost:8501
-echo.
-echo   Close this window to stop Viper.
-echo  ============================================================
+echo ============================================================
+echo   VIPER Bioinformatics Audit Agent
+echo ============================================================
+echo [INFO] Starting on port !PORT!
+echo [INFO] Open in browser: http://localhost:!PORT!
+echo [INFO] Close this window to stop Viper.
+echo ============================================================
 echo.
 
 REM --- Launch Streamlit directly from .venv (no activation needed) ---
 ".venv\Scripts\streamlit.exe" run app.py ^
-    --server.port 8501 ^
+    --server.port !PORT! ^
     --server.headless false ^
     --browser.gatherUsageStats false ^
     --theme.base dark

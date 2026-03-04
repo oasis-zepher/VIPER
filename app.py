@@ -270,13 +270,13 @@ def render_api_key_setup() -> bool:
             "models":  [
                 "gemini-2.5-pro",
                 "gemini-2.5-flash",
+                "gemini-2.0-flash-exp",
                 "gemini-2.0-flash",
-                "gemini-2.0-flash-thinking-exp",
             ],
             "default": "gemini-2.5-flash",
             "key_label": "Google API Key",
             "key_help":  "获取地址: https://aistudio.google.com/apikey",
-            "note": "支持多模态视觉审计（图表分析），超长上下文窗口",
+            "note": "支持多模态视觉审计（图表分析），超长上下文窗口。如有更新模型可选 '自定义' 手动输入",
         },
         "🟤 OpenAI GPT / o 系列": {
             "key":     "openai",
@@ -345,17 +345,26 @@ def render_api_key_setup() -> bool:
     cfg = PROVIDERS[provider_label]
 
     with col_right:
-        model = st.selectbox(
-            "选择模型",
-            cfg["models"],
-            index=cfg["models"].index(cfg["default"]) if cfg["default"] in cfg["models"] else 0,
+        model_preset = st.selectbox(
+            "选择预设模型",
+            ["自定义 (手动输入)"] + cfg["models"],
+            index=1 if cfg["default"] in cfg["models"] else 0,
         )
+        if model_preset == "自定义 (手动输入)":
+            model = st.text_input(
+                "自定义模型名",
+                value=cfg["default"],
+                placeholder="例: gemini-3.1-pro / gpt-4.2 / deepseek-v3",
+                help="填入任意该提供商支持的模型 ID，不受列表限制",
+            )
+        else:
+            model = model_preset
         st.caption(f"💡 {cfg['note']}")
 
         api_key = st.text_input(
             cfg["key_label"],
             type="password",
-            placeholder="sk-... 或 AI... 或 eyJ...",
+            placeholder="sk-... / AIza... / eyJ...",
             help=cfg["key_help"],
         )
 
