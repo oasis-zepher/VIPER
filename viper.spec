@@ -1,9 +1,9 @@
 ﻿# -*- mode: python ; coding: utf-8 -*-
 """
-viper.spec  PyInstaller spec for VIPER (CustomTkinter + onefile + noconsole)
+viper.spec  PyInstaller spec for VIPER (CustomTkinter + onedir + noconsole)
 Entry point : app.py
 Build cmd   : pyinstaller viper.spec --clean
-Output      : dist/VIPER.exe
+Output      : dist/VIPER/VIPER.exe  ← 双击此文件启动 (极速启动，无解压等待)
 """
 
 from pathlib import Path
@@ -132,9 +132,6 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
     name="VIPER",
     debug=False,
@@ -151,4 +148,16 @@ exe = EXE(
     entitlements_file=None,
     icon=str(PROJECT_ROOT / "assets" / "viper_icon.ico"),
 )
-# 注意: onefile 模式无 COLLECT 块
+
+# onedir 模式：COLLECT 将所有文件收集到 dist/VIPER/ 目录
+# 真正的入口: dist/VIPER/VIPER.exe
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name="VIPER",
+)
