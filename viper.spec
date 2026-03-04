@@ -109,7 +109,6 @@ excludes_list = [
     "test",
     "unittest",
     "distutils",
-    "email",      # keep only if needed
 ]
 
 a = Analysis(
