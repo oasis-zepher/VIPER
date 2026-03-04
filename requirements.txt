@@ -10,8 +10,8 @@ langchain-anthropic>=0.3.0
 langgraph>=0.2.53
 google-generativeai>=0.8.3
 
-# === Web UI ===
-streamlit>=1.40.1
+# === Desktop UI ===
+customtkinter>=5.2.2
 
 # === Data Science (审计分析用) ===
 pandas>=2.2.2

@@ -1,1 +1,1 @@
-# ui/__init__.py
+# ui package — CustomTkinter desktop UI for Viper
