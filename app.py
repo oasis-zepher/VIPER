@@ -97,11 +97,14 @@ class ViperApp:
         self._open_main()
 
     def _open_main(self) -> None:
+        from ui.audit_engine import AuditEngine
         from ui.main_window import MainWindow
-        win = MainWindow(self._root)
-        win.protocol("WM_DELETE_WINDOW", self._quit)
-        win.lift()
-        win.focus_force()
+        self._engine = AuditEngine()
+        self._root.deiconify()
+        MainWindow(self._root, self._engine)
+        self._root.protocol("WM_DELETE_WINDOW", self._quit)
+        self._root.lift()
+        self._root.focus_force()
 
     def _quit(self) -> None:
         try:
