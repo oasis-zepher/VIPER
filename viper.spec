@@ -1,203 +1,155 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 """
-viper.spec — PyInstaller 打包配置
-用法: pyinstaller viper.spec
+viper.spec  PyInstaller spec for VIPER (CustomTkinter + onefile + noconsole)
+Entry point : app.py
+Build cmd   : pyinstaller viper.spec --clean
+Output      : dist/VIPER.exe
 """
 
-import os
-import sys
 from pathlib import Path
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy_metadata
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, collect_dynamic_libs
 
-# 项目根目录
-try:
-    SPEC_DIR = os.path.dirname(os.path.abspath(SPECPATH))
-except NameError:
-    SPEC_DIR = os.getcwd()
+block_cipher = None
 
-# =====================================================================
-#  收集依赖数据（安全方式 - 跳过无法收集的包）
-# =====================================================================
+PROJECT_ROOT = Path(SPECPATH)
 
-def safe_collect_data(pkg, **kwargs):
-    """安全收集数据文件，失败时返回空列表。"""
-    try:
-        return collect_data_files(pkg, **kwargs)
-    except Exception:
-        print(f"[WARN] Skipping data collection for {pkg}")
-        return []
+#  资产与配置数据 
+added_datas = [
+    (str(PROJECT_ROOT / "assets"), "assets"),
+    (str(PROJECT_ROOT / "config"), "config"),
+]
 
-# Streamlit 需要打包自身的静态资源
-streamlit_data = safe_collect_data("streamlit")
+# CustomTkinter 必须打包其主题 JSON / 图像资产
+added_datas += collect_data_files("customtkinter")
 
-# 收集关键包的 dist-info 元数据
-metadata_datas = []
-for meta_pkg in ["streamlit", "pydantic", "pydantic_core",
-                 "langchain", "langchain_core", "langchain_google_genai",
-                 "langchain_openai", "langgraph", "importlib_metadata",
-                 "google_generativeai", "google_ai_generativelanguage"]:
-    try:
-        metadata_datas += copy_metadata(meta_pkg)
-    except Exception:
-        print(f"[WARN] No metadata found for {meta_pkg}")
+# tkinterdnd2 需打包原生 DLL
+added_datas += collect_data_files("tkinterdnd2")
+added_datas += collect_dynamic_libs("tkinterdnd2")
 
-# 其他包的数据文件（可能不存在）
-additional_data = []
-for pkg in ["langchain", "langchain_core", "langchain_google_genai",
-            "langgraph", "google.generativeai", "pydantic"]:
-    additional_data += safe_collect_data(pkg)
-
-# 隐式导入（PyInstaller 无法自动检测到的模块）
-hidden_imports = [
-    # Streamlit 内部
-    "streamlit",
-    "streamlit.runtime.scriptrunner",
-    "streamlit.web.cli",
-    "streamlit.web.bootstrap",
-    # LangChain
+#  隐式导入 
+hidden = [
+    #  GUI 
+    "customtkinter",
+    "tkinterdnd2",
+    #  PIL 
+    "PIL", "PIL.Image", "PIL.ImageTk", "PIL.ImageDraw",
+    "PIL.ImageFilter", "PIL.ImageFont",
+    #  LangChain 
     "langchain",
+    "langchain.chat_models",
+    "langchain.schema",
     "langchain_core",
+    "langchain_core.messages",
+    "langchain_core.prompts",
+    "langchain_core.output_parsers",
+    "langchain_community",
     "langchain_google_genai",
     "langchain_openai",
+    "langchain_anthropic",
+    #  LangGraph 
     "langgraph",
-    # 数据处理（审计分析用）
-    "pandas",
-    "numpy",
-    # 文件处理
-    "openpyxl",
-    "chardet",
-    "dotenv",
-    "PyPDF2",
-    # 其他
-    "pydantic",
-    "tenacity",
+    "langgraph.graph",
+    "langgraph.checkpoint",
+    "langgraph.prebuilt",
+    #  LLM 提供商 
     "google.generativeai",
     "google.ai.generativelanguage",
-    "PIL",
+    "anthropic",
+    "openai",
+    #  数据处理 
+    "pandas", "pandas.core", "pandas.io",
+    "numpy",
+    "openpyxl", "openpyxl.styles", "openpyxl.utils",
+    #  验证 / 重试 
+    "pydantic", "pydantic.v1",
+    "tenacity",
+    #  工具库 
+    "chardet",
+    "dotenv", "python_dotenv",
+    "jinja2",
+    "tiktoken",
+    "httpx", "httpcore",
+    "aiohttp",
+    "certifi",
+    "charset_normalizer",
+    "queue",
+    "ctypes",
 ]
 
-# Streamlit 隐式子模块
-def safe_collect_submodules(pkg):
-    try:
-        return collect_submodules(pkg)
-    except Exception:
-        print(f"[WARN] Skipping submodule collection for {pkg}")
-        return []
+# 用 collect_submodules 扩展核心模块
+hidden += collect_submodules("langchain_core")
+hidden += collect_submodules("langgraph")
+hidden += collect_submodules("google.generativeai")
+hidden += collect_submodules("pydantic")
 
-hidden_imports += safe_collect_submodules("streamlit")
-hidden_imports += safe_collect_submodules("pydantic")
-
-# =====================================================================
-#  应用数据文件
-# =====================================================================
-
-# VIPER 自身的资源文件
-viper_datas = [
-    # 应用主代码
-    ("app.py", "."),
-    # 包目录
-    ("config", "config"),
-    ("agents", "agents"),
-    ("core", "core"),
-    ("ui", "ui"),
-    ("utils", "utils"),
-    ("assets", "assets"),
-    # 配置文件
-    (".env.example", "."),
+#  排除项 (减小体积) 
+# 注意: tkinter 绝对不能排除 (customtkinter 依赖它)
+excludes_list = [
+    "streamlit",
+    "IPython",
+    "jupyter",
+    "notebook",
+    "matplotlib",
+    "scipy",
+    "sklearn",
+    "tensorflow",
+    "torch",
+    "PySide6",
+    "PyQt5",
+    "PyQt6",
+    "wx",
+    "pytest",
+    "black",
+    "mypy",
+    "pylint",
+    "ruff",
+    "sphinx",
+    "docutils",
+    "pygments",  # keep if needed by rich, else exclude
+    "test",
+    "unittest",
+    "distutils",
+    "email",      # keep only if needed
 ]
-
-all_datas = viper_datas + streamlit_data + additional_data + metadata_datas
-
-# =====================================================================
-#  图标
-# =====================================================================
-
-icon_file = os.path.join(SPEC_DIR, "assets", "viper_icon.ico")
-if not os.path.exists(icon_file):
-    icon_file = None  # 无图标时不报错
-
-# =====================================================================
-#  Analysis & Build
-# =====================================================================
 
 a = Analysis(
-    ["launcher.py"],
-    pathex=[SPEC_DIR],
+    ["app.py"],
+    pathex=[str(PROJECT_ROOT)],
     binaries=[],
-    datas=all_datas,
-    hiddenimports=hidden_imports,
+    datas=added_datas,
+    hiddenimports=hidden,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[
-        # GUI toolkits (Streamlit uses its own web server)
-        "tkinter", "PyQt5", "PyQt6", "PySide2", "PySide6",
-        "qtpy", "sip", "sipbuild",
-        # Testing / development
-        "test", "unittest", "pytest", "nose", "doctest",
-        "IPython", "ipykernel", "ipywidgets",
-        # Jupyter / notebook
-        "jupyter", "jupyter_client", "jupyter_core",
-        "notebook", "nbconvert", "nbformat", "nbclient",
-        # Documentation tools
-        "sphinx", "docutils", "alabaster", "babel",
-        # AWS / cloud (not needed)
-        "botocore", "boto3", "s3transfer", "s3fs",
-        # Heavy data tools not needed
-        "pyarrow", "fastparquet", "dask", "distributed",
-        "numba", "llvmlite",
-        # Alternative viz (not used)
-        "bokeh", "panel", "holoviews", "datashader", "colorcet",
-        "altair", "vega",
-        # Crypto / network (brought by other deps)
-        "cryptography", "nacl", "paramiko",
-        # Compiler / build tools
-        "Cython", "meson", "mesonbuild",
-        "pip", "wheel", "ensurepip",
-        # XML / web scraping
-        "lxml", "bs4", "scrapy", "html5lib",
-        # Database
-        "sqlalchemy", "sqlite3", "psycopg2",
-        # Misc unused
-        "xmlrpc", "curses", "lib2to3", "pydoc",
-        "multiprocessing.popen_spawn_posix",
-        "multiprocessing.popen_fork",
-        "multiprocessing.popen_forkserver",
-    ],
+    excludes=excludes_list,
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
-    cipher=None,
+    cipher=block_cipher,
     noarchive=False,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=None)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
     [],
-    exclude_binaries=True,
     name="VIPER",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,  # 保持控制台窗口用于显示服务器状态
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,           # 无 CMD 黑框
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=icon_file,
+    icon=str(PROJECT_ROOT / "assets" / "viper_icon.ico"),
 )
-
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name="VIPER",
-)
+# 注意: onefile 模式无 COLLECT 块

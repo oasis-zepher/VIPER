@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import queue
 import re
+import sys
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox
@@ -330,7 +331,8 @@ class MainWindow(ctk.CTkToplevel):
         self.update_idletasks()
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry(f"1440x860+{max(0,(sw-1440)//2)}+{max(0,(sh-860)//2)}")
-        icon_p = Path(__file__).parent.parent / "assets" / "viper_icon.ico"
+        _base = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).parent.parent  # type: ignore[attr-defined]
+        icon_p = _base / "assets" / "viper_icon.ico"
         if icon_p.exists():
             try:
                 self.iconbitmap(str(icon_p))
