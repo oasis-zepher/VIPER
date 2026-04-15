@@ -17,6 +17,7 @@
 - daemon-backed `rcs` / `remote-control-server`
 - `bun run rcs` 开发入口
 - build 默认包含 `BRIDGE_MODE` 和 `DAEMON`
+- `gemini` / `grok` provider 路由与 `/provider` 切换命令
 
 ## Quick Start
 
@@ -50,6 +51,18 @@ bun run build
 ```
 
 构建采用 `build.ts` 的 code splitting 多文件打包，产物位于 `dist/`，入口为 `dist/cli.js`。
+
+### Provider Switching
+
+```bash
+/provider
+/provider openai
+/provider gemini
+/provider grok
+/provider anthropic
+```
+
+`/provider` 会切换当前 API provider，并保留各 provider 对应的 env/settings 路由约定。
 
 ## Remote Control Server
 

@@ -125,6 +125,28 @@ FEATURE_BRIDGE_MODE=1 bun run dev
 FEATURE_BRIDGE_MODE=1 FEATURE_DAEMON=1 bun run dev
 ```
 
+### 4.1 持久远控服务（RCS）
+
+除了单次 `remote-control` 连接，VIPER 现在也支持更接近 `claude-code-best` 的持久 Remote Control Server 用法：
+
+```bash
+# 启动 daemon-backed 远控服务
+bun run rcs
+
+# 查看状态
+bun run rcs -- status
+
+# 停止服务
+bun run rcs -- stop
+
+# 安装后的 CLI 同样支持
+viper rcs
+viper rcs status
+viper rcs stop
+```
+
+这里的 `rcs` 是 `remote-control-server` 的直达别名，底层会走 `daemonMain()`，并通过 pid file 管理生命周期，避免重复启动、也支持显式查询和停止。
+
 ## 五、外部依赖
 
 | 依赖 | 说明 |

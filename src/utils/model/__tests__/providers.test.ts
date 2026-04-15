@@ -9,6 +9,8 @@ mock.module("@anthropic/config", () => ({
 
 describe("getAPIProvider", () => {
   const envKeys = [
+    "CLAUDE_CODE_USE_GEMINI",
+    "CLAUDE_CODE_USE_GROK",
     "CLAUDE_CODE_USE_BEDROCK",
     "CLAUDE_CODE_USE_VERTEX",
     "CLAUDE_CODE_USE_FOUNDRY",
@@ -35,7 +37,19 @@ describe("getAPIProvider", () => {
     delete process.env.CLAUDE_CODE_USE_VERTEX;
     delete process.env.CLAUDE_CODE_USE_FOUNDRY;
     delete process.env.CLAUDE_CODE_USE_OPENAI;
+    delete process.env.CLAUDE_CODE_USE_GEMINI;
+    delete process.env.CLAUDE_CODE_USE_GROK;
     expect(getAPIProvider()).toBe("firstParty");
+  });
+
+  test('returns "gemini" when CLAUDE_CODE_USE_GEMINI is set', () => {
+    process.env.CLAUDE_CODE_USE_GEMINI = "1";
+    expect(getAPIProvider()).toBe("gemini");
+  });
+
+  test('returns "grok" when CLAUDE_CODE_USE_GROK is set', () => {
+    process.env.CLAUDE_CODE_USE_GROK = "1";
+    expect(getAPIProvider()).toBe("grok");
   });
 
   test('returns "bedrock" when CLAUDE_CODE_USE_BEDROCK is set', () => {
@@ -61,6 +75,13 @@ describe("getAPIProvider", () => {
     process.env.CLAUDE_CODE_USE_BEDROCK = "1";
     process.env.CLAUDE_CODE_USE_VERTEX = "1";
     expect(getAPIProvider()).toBe("bedrock");
+  });
+
+  test("openai takes precedence over gemini and grok env vars", () => {
+    process.env.CLAUDE_CODE_USE_OPENAI = "1";
+    process.env.CLAUDE_CODE_USE_GEMINI = "1";
+    process.env.CLAUDE_CODE_USE_GROK = "1";
+    expect(getAPIProvider()).toBe("openai");
   });
 
   test("bedrock wins when all three env vars are set", () => {
