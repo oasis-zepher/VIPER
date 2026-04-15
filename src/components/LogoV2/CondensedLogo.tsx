@@ -53,9 +53,9 @@ export function CondensedLogo(): ReactNode {
     }
   }, [showOverageCreditUpsell, showGuestPassesUpsell])
 
-  // Calculate available width for text content.
-  // Account for the wider pixel penguin, gap, and padding.
-  const textWidth = Math.max(columns - 24, 20)
+  // Calculate available width for text content
+  // Account for: condensed clawd width (11 chars) + gap (2) + padding (2) = 15 chars
+  const textWidth = Math.max(columns - 15, 20)
 
   // Truncate version to fit within available width, accounting for "Vipercode v" prefix
   const versionPrefix = 'Vipercode v'
