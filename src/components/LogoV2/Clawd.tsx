@@ -21,19 +21,19 @@ const BODY = 'white'
 const OUTLINE = 'inactive'
 const BEAK = 'warning'
 const EYE_PATCH: Segment = {
-  text: '  ●  ●  ',
+  text: '  •  •  ',
   color: 'black',
   backgroundColor: BODY,
 }
 
 const LOOK_LEFT_PATCH: Segment = {
-  text: ' ●   ·  ',
+  text: ' •   ·  ',
   color: 'black',
   backgroundColor: BODY,
 }
 
 const LOOK_RIGHT_PATCH: Segment = {
-  text: '  ·   ● ',
+  text: '  ·   • ',
   color: 'black',
   backgroundColor: BODY,
 }
@@ -59,7 +59,7 @@ const POSES: Record<ClawdPose, readonly Segment[][]> = {
     [
       { text: ' ▐██', color: OUTLINE },
       {
-        text: '   ▄▄   ',
+        text: '   ▀▀   ',
         color: BEAK,
         backgroundColor: BODY,
       },
@@ -92,7 +92,7 @@ const POSES: Record<ClawdPose, readonly Segment[][]> = {
     [
       { text: ' ▐██', color: OUTLINE },
       {
-        text: '   ▄▄   ',
+        text: '   ▀▀   ',
         color: BEAK,
         backgroundColor: BODY,
       },
@@ -125,7 +125,7 @@ const POSES: Record<ClawdPose, readonly Segment[][]> = {
     [
       { text: ' ▐██', color: OUTLINE },
       {
-        text: '   ▄▄   ',
+        text: '   ▀▀   ',
         color: BEAK,
         backgroundColor: BODY,
       },
@@ -158,7 +158,7 @@ const POSES: Record<ClawdPose, readonly Segment[][]> = {
     [
       { text: '  ▐██', color: OUTLINE },
       {
-        text: '   ▄▄   ',
+        text: '   ▀▀   ',
         color: BEAK,
         backgroundColor: BODY,
       },
