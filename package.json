@@ -1,16 +1,16 @@
 {
-  "name": "claude-code-best",
+  "name": "vipercode",
   "version": "1.1.0",
-  "description": "Reverse-engineered Anthropic Claude Code CLI — interactive AI coding assistant in the terminal",
+  "description": "Vipercode CLI — interactive AI coding assistant in the terminal",
   "type": "module",
-  "author": "claude-code-best <claude-code-best@proton.me>",
+  "author": "vipercode <vipercode@proton.me>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/claude-code-best/claude-code.git"
+    "url": "git+https://github.com/oasis-zepher/VIPER.git"
   },
-  "homepage": "https://github.com/claude-code-best/claude-code#readme",
+  "homepage": "https://github.com/oasis-zepher/VIPER#readme",
   "bugs": {
-    "url": "https://github.com/claude-code-best/claude-code/issues"
+    "url": "https://github.com/oasis-zepher/VIPER/issues"
   },
   "keywords": [
     "claude",
@@ -26,7 +26,9 @@
   },
   "bin": {
     "ccb": "dist/cli.js",
-    "claude-code-best": "dist/cli.js"
+    "claude-code-best": "dist/cli.js",
+    "viper": "dist/cli.js",
+    "vipercode": "dist/cli.js"
   },
   "workspaces": [
     "packages/*",
@@ -40,6 +42,7 @@
     "build": "bun run build.ts",
     "dev": "bun run scripts/dev.ts",
     "dev:inspect": "bun run scripts/dev-debug.ts",
+    "rcs": "bun run scripts/rcs.ts",
     "prepublishOnly": "bun run build",
     "lint": "biome lint src/",
     "lint:fix": "biome lint --fix src/",

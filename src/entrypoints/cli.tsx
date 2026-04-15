@@ -51,7 +51,7 @@ async function main(): Promise<void> {
   ) {
     // MACRO.VERSION is inlined at build time
     // biome-ignore lint/suspicious/noConsole:: intentional console output
-    console.log(`${MACRO.VERSION} (Claude Code)`)
+    console.log(`${MACRO.VERSION} (Vipercode)`)
     return
   }
 
@@ -165,6 +165,55 @@ async function main(): Promise<void> {
     }
 
     await bridgeMain(args.slice(1))
+    return
+  }
+
+  if (
+    feature('DAEMON') &&
+    feature('BRIDGE_MODE') &&
+    (args[0] === 'remote-control-server' || args[0] === 'rcs')
+  ) {
+    profileCheckpoint('cli_remote_control_server_path')
+    const { enableConfigs } = await import('@anthropic/config')
+    enableConfigs()
+    const daemonArgs = args[1] ? args.slice(1) : ['start']
+    const daemonSubcommand = daemonArgs[0] || 'start'
+
+    if (daemonSubcommand === 'start') {
+      const { getBridgeDisabledReason, checkBridgeMinVersion } = await import(
+        '../bridge/bridgeEnabled.js'
+      )
+      const { BRIDGE_LOGIN_ERROR } = await import('../bridge/types.js')
+      const { getClaudeAIOAuthTokens } = await import('../utils/auth.js')
+      const { exitWithError } = await import('../utils/process.js')
+
+      if (!getClaudeAIOAuthTokens()?.accessToken) {
+        exitWithError(BRIDGE_LOGIN_ERROR)
+      }
+      const disabledReason = await getBridgeDisabledReason()
+      if (disabledReason) {
+        exitWithError(`Error: ${disabledReason}`)
+      }
+      const versionError = checkBridgeMinVersion()
+      if (versionError) {
+        exitWithError(versionError)
+      }
+
+      const { waitForPolicyLimitsToLoad, isPolicyAllowed } = await import(
+        '../services/policyLimits/index.js'
+      )
+      await waitForPolicyLimitsToLoad()
+      if (!isPolicyAllowed('allow_remote_control')) {
+        exitWithError(
+          "Error: Remote Control is disabled by your organization's policy.",
+        )
+      }
+    }
+
+    const { initSinks } = await import('../utils/sinks.js')
+    initSinks()
+    const { daemonMain } = await import('../daemon/main.js')
+    await daemonMain(daemonArgs)
     return
   }
 

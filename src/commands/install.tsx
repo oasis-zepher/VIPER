@@ -95,7 +95,7 @@ function Install({ onDone, force, target }: InstallProps): React.ReactNode {
         // Check specifically for lock failure
         if (result.lockFailed) {
           throw new Error(
-            'Could not install - another process is currently installing Claude. Please try again in a moment.',
+            'Could not install - another process is currently installing Vipercode. Please try again in a moment.',
           )
         }
 
@@ -210,14 +210,14 @@ function Install({ onDone, force, target }: InstallProps): React.ReactNode {
       setTimeout(
         onDone,
         2000,
-        'Claude Code installation completed successfully',
+        'Vipercode installation completed successfully',
         {
           display: 'system' as const,
         },
       )
     } else if (state.type === 'error') {
       // Give error message time to render before exiting
-      setTimeout(onDone, 3000, 'Claude Code installation failed', {
+      setTimeout(onDone, 3000, 'Vipercode installation failed', {
         display: 'system' as const,
       })
     }
@@ -235,7 +235,7 @@ function Install({ onDone, force, target }: InstallProps): React.ReactNode {
 
       {state.type === 'installing' && (
         <Text color="claude">
-          Installing Claude Code native build {state.version}...
+          Installing Vipercode native build {state.version}...
         </Text>
       )}
 
@@ -250,7 +250,7 @@ function Install({ onDone, force, target }: InstallProps): React.ReactNode {
           <Box>
             <StatusIcon status="success" withSpace />
             <Text color="success" bold>
-              Claude Code successfully installed!
+              Vipercode successfully installed!
             </Text>
           </Box>
           <Box marginLeft={2} flexDirection="column" gap={1}>
@@ -269,7 +269,7 @@ function Install({ onDone, force, target }: InstallProps): React.ReactNode {
             <Box marginTop={1}>
               <Text dimColor>Next: Run </Text>
               <Text color="claude" bold>
-                claude --help
+                viper --help
               </Text>
               <Text dimColor> to get started</Text>
             </Box>
@@ -298,7 +298,7 @@ function Install({ onDone, force, target }: InstallProps): React.ReactNode {
 export const install = {
   type: 'local-jsx' as const,
   name: 'install',
-  description: 'Install Claude Code native build',
+  description: 'Install Vipercode native build',
   argumentHint: '[options]',
   async call(
     onDone: (
