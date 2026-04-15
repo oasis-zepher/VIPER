@@ -38,7 +38,7 @@ const CLICK_ANIMATIONS: readonly (readonly Frame[])[] = [JUMP_WAVE, LOOK_AROUND]
 const IDLE: Frame = { pose: 'default', offset: 0 }
 const FRAME_MS = 60
 const incrementFrame = (i: number) => i + 1
-const CLAWD_HEIGHT = 3
+const CLAWD_HEIGHT = 8
 
 /**
  * Clawd with click-triggered animations (crouch-jump with arms up, or
