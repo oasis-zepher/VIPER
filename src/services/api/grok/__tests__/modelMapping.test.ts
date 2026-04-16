@@ -1,10 +1,15 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
 import { resolveGrokModel } from '../modelMapping.js'
+import {
+  clearAllProviderSessionConfig,
+  setProviderSessionConfig,
+} from '../../../../utils/providerSessionConfig.js'
 
 describe('resolveGrokModel', () => {
   const originalEnv = { ...process.env }
 
   beforeEach(() => {
+    clearAllProviderSessionConfig()
     delete process.env.GROK_MODEL
     delete process.env.GROK_MODEL_MAP
     delete process.env.GROK_DEFAULT_SONNET_MODEL
@@ -16,7 +21,13 @@ describe('resolveGrokModel', () => {
   })
 
   afterEach(() => {
+    clearAllProviderSessionConfig()
     process.env = { ...originalEnv }
+  })
+
+  test('session-selected Grok model overrides canonical Claude IDs', () => {
+    setProviderSessionConfig('grok', { defaultModel: 'grok-4.20-reasoning' })
+    expect(resolveGrokModel('claude-sonnet-4-6')).toBe('grok-4.20-reasoning')
   })
 
   test('GROK_MODEL env var takes highest priority', () => {

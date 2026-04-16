@@ -19,6 +19,12 @@ import {
   createAssistantAPIErrorMessage,
   normalizeContentFromAPI,
 } from '../../../utils/messages.js'
+import {
+  clearProviderClientCache,
+  clearProviderSessionConfig,
+  getProviderAuthFailureMessage,
+  isLikelyProviderAuthError,
+} from '../../../utils/providerSessionConfig.js'
 
 /**
  * OpenAI-compatible query path. Converts Anthropic-format messages/tools to
@@ -206,9 +212,16 @@ export async function* queryModelOpenAI(
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
+    const isAuthError = isLikelyProviderAuthError(error)
+    if (isAuthError) {
+      clearProviderSessionConfig('openai')
+      await clearProviderClientCache('openai')
+    }
     logForDebugging(`[OpenAI] Error: ${errorMessage}`, { level: 'error' })
     yield createAssistantAPIErrorMessage({
-      content: `API Error: ${errorMessage}`,
+      content: isAuthError
+        ? `${getProviderAuthFailureMessage('openai')}\n\nAPI Error: ${errorMessage}`
+        : `API Error: ${errorMessage}`,
       apiError: 'api_error',
       error: error instanceof Error ? error : new Error(String(error)),
     })

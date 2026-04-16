@@ -36,11 +36,15 @@ export type ModelSetting = ModelName | ModelAlias | null
 
 export function getSmallFastModel(): ModelName {
   const provider = getAPIProvider()
-  if (provider === 'openai' && process.env.OPENAI_SMALL_FAST_MODEL) {
-    return process.env.OPENAI_SMALL_FAST_MODEL
-  }
-  if (provider === 'gemini' && process.env.GEMINI_SMALL_FAST_MODEL) {
-    return process.env.GEMINI_SMALL_FAST_MODEL
+  const providerSmallFastEnv = {
+    openai: process.env.OPENAI_SMALL_FAST_MODEL,
+    glm: process.env.GLM_SMALL_FAST_MODEL,
+    deepseek: process.env.DEEPSEEK_SMALL_FAST_MODEL,
+    qwen: process.env.QWEN_SMALL_FAST_MODEL,
+    gemini: process.env.GEMINI_SMALL_FAST_MODEL,
+  }[provider]
+  if (providerSmallFastEnv) {
+    return providerSmallFastEnv
   }
   return process.env.ANTHROPIC_SMALL_FAST_MODEL || getDefaultHaikuModel()
 }
@@ -112,11 +116,15 @@ export function getBestModel(): ModelName {
 // @[MODEL LAUNCH]: Update the default Opus model (3P providers may lag so keep defaults unchanged).
 export function getDefaultOpusModel(): ModelName {
   const provider = getAPIProvider()
-  if (provider === 'openai' && process.env.OPENAI_DEFAULT_OPUS_MODEL) {
-    return process.env.OPENAI_DEFAULT_OPUS_MODEL
-  }
-  if (provider === 'gemini' && process.env.GEMINI_DEFAULT_OPUS_MODEL) {
-    return process.env.GEMINI_DEFAULT_OPUS_MODEL
+  const providerOpusEnv = {
+    openai: process.env.OPENAI_DEFAULT_OPUS_MODEL,
+    glm: process.env.GLM_DEFAULT_OPUS_MODEL,
+    deepseek: process.env.DEEPSEEK_DEFAULT_OPUS_MODEL,
+    qwen: process.env.QWEN_DEFAULT_OPUS_MODEL,
+    gemini: process.env.GEMINI_DEFAULT_OPUS_MODEL,
+  }[provider]
+  if (providerOpusEnv) {
+    return providerOpusEnv
   }
   if (process.env.ANTHROPIC_DEFAULT_OPUS_MODEL) {
     return process.env.ANTHROPIC_DEFAULT_OPUS_MODEL
@@ -133,11 +141,15 @@ export function getDefaultOpusModel(): ModelName {
 // @[MODEL LAUNCH]: Update the default Sonnet model (3P providers may lag so keep defaults unchanged).
 export function getDefaultSonnetModel(): ModelName {
   const provider = getAPIProvider()
-  if (provider === 'openai' && process.env.OPENAI_DEFAULT_SONNET_MODEL) {
-    return process.env.OPENAI_DEFAULT_SONNET_MODEL
-  }
-  if (provider === 'gemini' && process.env.GEMINI_DEFAULT_SONNET_MODEL) {
-    return process.env.GEMINI_DEFAULT_SONNET_MODEL
+  const providerSonnetEnv = {
+    openai: process.env.OPENAI_DEFAULT_SONNET_MODEL,
+    glm: process.env.GLM_DEFAULT_SONNET_MODEL,
+    deepseek: process.env.DEEPSEEK_DEFAULT_SONNET_MODEL,
+    qwen: process.env.QWEN_DEFAULT_SONNET_MODEL,
+    gemini: process.env.GEMINI_DEFAULT_SONNET_MODEL,
+  }[provider]
+  if (providerSonnetEnv) {
+    return providerSonnetEnv
   }
   if (process.env.ANTHROPIC_DEFAULT_SONNET_MODEL) {
     return process.env.ANTHROPIC_DEFAULT_SONNET_MODEL
@@ -152,11 +164,15 @@ export function getDefaultSonnetModel(): ModelName {
 // @[MODEL LAUNCH]: Update the default Haiku model (3P providers may lag so keep defaults unchanged).
 export function getDefaultHaikuModel(): ModelName {
   const provider = getAPIProvider()
-  if (provider === 'openai' && process.env.OPENAI_DEFAULT_HAIKU_MODEL) {
-    return process.env.OPENAI_DEFAULT_HAIKU_MODEL
-  }
-  if (provider === 'gemini' && process.env.GEMINI_DEFAULT_HAIKU_MODEL) {
-    return process.env.GEMINI_DEFAULT_HAIKU_MODEL
+  const providerHaikuEnv = {
+    openai: process.env.OPENAI_DEFAULT_HAIKU_MODEL,
+    glm: process.env.GLM_DEFAULT_HAIKU_MODEL,
+    deepseek: process.env.DEEPSEEK_DEFAULT_HAIKU_MODEL,
+    qwen: process.env.QWEN_DEFAULT_HAIKU_MODEL,
+    gemini: process.env.GEMINI_DEFAULT_HAIKU_MODEL,
+  }[provider]
+  if (providerHaikuEnv) {
+    return providerHaikuEnv
   }
   if (process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL) {
     return process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL

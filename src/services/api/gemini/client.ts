@@ -1,6 +1,10 @@
 import { parseSSEFrames } from 'src/cli/transports/SSETransport.js'
 import { errorMessage } from 'src/utils/errors.js'
 import { getProxyFetchOptions } from 'src/utils/proxy.js'
+import {
+  getProviderSessionApiKey,
+  getProviderSessionBaseUrl,
+} from '../../../utils/providerSessionConfig.js'
 import type {
   GeminiGenerateContentRequest,
   GeminiStreamChunk,
@@ -12,10 +16,11 @@ const DEFAULT_GEMINI_BASE_URL =
 const STREAM_DECODE_OPTS: TextDecodeOptions = { stream: true }
 
 function getGeminiBaseUrl(): string {
-  return (process.env.GEMINI_BASE_URL || DEFAULT_GEMINI_BASE_URL).replace(
-    /\/+$/,
-    '',
-  )
+  return (
+    getProviderSessionBaseUrl('gemini') ||
+    process.env.GEMINI_BASE_URL ||
+    DEFAULT_GEMINI_BASE_URL
+  ).replace(/\/+$/, '')
 }
 
 function getGeminiModelPath(model: string): string {
@@ -36,7 +41,8 @@ export async function* streamGeminiGenerateContent(params: {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-goog-api-key': process.env.GEMINI_API_KEY || '',
+      'x-goog-api-key':
+        getProviderSessionApiKey('gemini') || process.env.GEMINI_API_KEY || '',
     },
     body: JSON.stringify(params.body),
     signal: params.signal,

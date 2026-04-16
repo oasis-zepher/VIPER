@@ -1,5 +1,9 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
 import { resolveOpenAIModel } from '../modelMapping.js'
+import {
+  clearAllProviderSessionConfig,
+  setProviderSessionConfig,
+} from '../../../../utils/providerSessionConfig.js'
 
 describe('resolveOpenAIModel', () => {
   const originalEnv = {
@@ -10,6 +14,7 @@ describe('resolveOpenAIModel', () => {
   }
 
   beforeEach(() => {
+    clearAllProviderSessionConfig()
     delete process.env.OPENAI_MODEL
     delete process.env.ANTHROPIC_DEFAULT_HAIKU_MODEL
     delete process.env.ANTHROPIC_DEFAULT_SONNET_MODEL
@@ -17,7 +22,13 @@ describe('resolveOpenAIModel', () => {
   })
 
   afterEach(() => {
+    clearAllProviderSessionConfig()
     Object.assign(process.env, originalEnv)
+  })
+
+  test('session-selected OpenAI model overrides canonical Claude IDs', () => {
+    setProviderSessionConfig('openai', { defaultModel: 'gpt-5' })
+    expect(resolveOpenAIModel('claude-sonnet-4-6')).toBe('gpt-5')
   })
 
   test('OPENAI_MODEL env var overrides all', () => {

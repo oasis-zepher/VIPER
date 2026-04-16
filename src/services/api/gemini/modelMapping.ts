@@ -1,3 +1,8 @@
+import {
+  getProviderSessionDefaultModel,
+  providerModelLooksCanonical,
+} from '../../../utils/providerSessionConfig.js'
+
 function getModelFamily(model: string): 'haiku' | 'sonnet' | 'opus' | null {
   if (/haiku/i.test(model)) return 'haiku'
   if (/opus/i.test(model)) return 'opus'
@@ -11,6 +16,10 @@ export function resolveGeminiModel(anthropicModel: string): string {
   }
 
   const cleanModel = anthropicModel.replace(/\[1m\]$/i, '')
+  const sessionDefaultModel = getProviderSessionDefaultModel('gemini')
+  if (sessionDefaultModel && providerModelLooksCanonical(cleanModel)) {
+    return sessionDefaultModel
+  }
   const family = getModelFamily(cleanModel)
 
   if (!family) {

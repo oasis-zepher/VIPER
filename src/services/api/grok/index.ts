@@ -18,6 +18,12 @@ import {
   createAssistantAPIErrorMessage,
   normalizeContentFromAPI,
 } from '../../../utils/messages.js'
+import {
+  clearProviderClientCache,
+  clearProviderSessionConfig,
+  getProviderAuthFailureMessage,
+  isLikelyProviderAuthError,
+} from '../../../utils/providerSessionConfig.js'
 
 /**
  * Grok (xAI) query path. Grok uses an OpenAI-compatible API, so we reuse
@@ -182,9 +188,16 @@ export async function* queryModelGrok(
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
+    const isAuthError = isLikelyProviderAuthError(error)
+    if (isAuthError) {
+      clearProviderSessionConfig('grok')
+      await clearProviderClientCache('grok')
+    }
     logForDebugging(`[Grok] Error: ${errorMessage}`, { level: 'error' })
     yield createAssistantAPIErrorMessage({
-      content: `API Error: ${errorMessage}`,
+      content: isAuthError
+        ? `${getProviderAuthFailureMessage('grok')}\n\nAPI Error: ${errorMessage}`
+        : `API Error: ${errorMessage}`,
       apiError: 'api_error',
       error: error instanceof Error ? error : new Error(String(error)),
     })

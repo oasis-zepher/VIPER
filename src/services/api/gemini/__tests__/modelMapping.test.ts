@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { resolveGeminiModel } from '../modelMapping.js'
+import {
+  clearAllProviderSessionConfig,
+  setProviderSessionConfig,
+} from '../../../../utils/providerSessionConfig.js'
 
 describe('resolveGeminiModel', () => {
   const originalEnv = {
@@ -13,6 +17,7 @@ describe('resolveGeminiModel', () => {
   }
 
   beforeEach(() => {
+    clearAllProviderSessionConfig()
     delete process.env.GEMINI_MODEL
     delete process.env.GEMINI_DEFAULT_HAIKU_MODEL
     delete process.env.GEMINI_DEFAULT_SONNET_MODEL
@@ -23,7 +28,13 @@ describe('resolveGeminiModel', () => {
   })
 
   afterEach(() => {
+    clearAllProviderSessionConfig()
     Object.assign(process.env, originalEnv)
+  })
+
+  test('session-selected Gemini model overrides canonical Claude IDs', () => {
+    setProviderSessionConfig('gemini', { defaultModel: 'gemini-2.5-pro' })
+    expect(resolveGeminiModel('claude-sonnet-4-6')).toBe('gemini-2.5-pro')
   })
 
   test('GEMINI_MODEL env var overrides family mappings', () => {

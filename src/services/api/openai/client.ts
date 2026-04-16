@@ -1,6 +1,9 @@
 import OpenAI from 'openai'
 import { getProxyFetchOptions } from 'src/utils/proxy.js'
-import { isEnvTruthy } from '../../utils/envUtils.js'
+import {
+  getProviderSessionApiKey,
+  getProviderSessionBaseUrl,
+} from '../../../utils/providerSessionConfig.js'
 
 /**
  * Environment variables:
@@ -20,8 +23,8 @@ export function getOpenAIClient(options?: {
 }): OpenAI {
   if (cachedClient) return cachedClient
 
-  const apiKey = process.env.OPENAI_API_KEY || ''
-  const baseURL = process.env.OPENAI_BASE_URL
+  const apiKey = getProviderSessionApiKey('openai') || process.env.OPENAI_API_KEY || ''
+  const baseURL = getProviderSessionBaseUrl('openai') || process.env.OPENAI_BASE_URL
 
   const client = new OpenAI({
     apiKey,

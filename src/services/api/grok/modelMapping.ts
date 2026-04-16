@@ -1,3 +1,8 @@
+import {
+  getProviderSessionDefaultModel,
+  providerModelLooksCanonical,
+} from '../../../utils/providerSessionConfig.js'
+
 /**
  * Default mapping from Anthropic model names to Grok model names.
  *
@@ -72,6 +77,10 @@ export function resolveGrokModel(anthropicModel: string): string {
   }
 
   const cleanModel = anthropicModel.replace(/\[1m\]$/, '')
+  const sessionDefaultModel = getProviderSessionDefaultModel('grok')
+  if (sessionDefaultModel && providerModelLooksCanonical(cleanModel)) {
+    return sessionDefaultModel
+  }
   const family = getModelFamily(cleanModel)
 
   // 2. User-provided model map

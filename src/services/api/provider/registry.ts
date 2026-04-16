@@ -17,6 +17,9 @@ import type { ProviderAdapter, QueryParams } from './types.js'
 import { getAPIProvider } from '../../../utils/model/providers.js'
 import { AnthropicAdapter } from './anthropic.js'
 import { OpenAIAdapter } from './openai.js'
+import { GLMAdapter } from './glm.js'
+import { DeepSeekAdapter } from './deepseek.js'
+import { QwenAdapter } from './qwen.js'
 import { BedrockAdapter } from './bedrock.js'
 import { VertexAdapter } from './vertex.js'
 import { FoundryAdapter } from './foundry.js'
@@ -68,6 +71,12 @@ function createProviderForType(type: string): ProviderAdapter {
       return new AnthropicAdapter()
     case 'openai':
       return new OpenAIAdapter()
+    case 'glm':
+      return new GLMAdapter()
+    case 'deepseek':
+      return new DeepSeekAdapter()
+    case 'qwen':
+      return new QwenAdapter()
     case 'bedrock':
       return new BedrockAdapter()
     case 'vertex':

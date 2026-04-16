@@ -373,11 +373,19 @@ export const SettingsSchema = lazySchema(() =>
         .optional()
         .describe('Tool usage permissions configuration'),
       modelType: z
-        .enum(['anthropic', 'openai', 'gemini', 'grok'])
+        .enum([
+          'anthropic',
+          'openai',
+          'glm',
+          'deepseek',
+          'qwen',
+          'gemini',
+          'grok',
+        ])
         .optional()
         .describe(
-          'API provider type. "anthropic" uses the Anthropic API (default), "openai" uses the OpenAI Chat Completions API, "gemini" uses the Gemini API, and "grok" uses the xAI Grok API (OpenAI-compatible). ' +
-            'When set to "openai", configure OPENAI_API_KEY / OPENAI_BASE_URL. When set to "gemini", configure GEMINI_API_KEY and optional GEMINI_BASE_URL. When set to "grok", configure GROK_API_KEY (or XAI_API_KEY) and optional GROK_BASE_URL.',
+          'API provider type. "anthropic" uses the Anthropic API (default); "openai", "glm", "deepseek", and "qwen" use provider-specific OpenAI-compatible chat completions APIs; "gemini" uses the Gemini API; and "grok" uses the xAI Grok API. ' +
+            'Configure "openai" with OPENAI_API_KEY / OPENAI_BASE_URL, "glm" with GLM_API_KEY / GLM_BASE_URL, "deepseek" with DEEPSEEK_API_KEY / DEEPSEEK_BASE_URL, "qwen" with QWEN_API_KEY / QWEN_BASE_URL, "gemini" with GEMINI_API_KEY and optional GEMINI_BASE_URL, and "grok" with GROK_API_KEY (or XAI_API_KEY) and optional GROK_BASE_URL.',
         ),
       model: z
         .string()

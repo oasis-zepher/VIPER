@@ -9,12 +9,15 @@ mock.module("@anthropic/config", () => ({
 
 describe("getAPIProvider", () => {
   const envKeys = [
+    "CLAUDE_CODE_USE_OPENAI",
+    "CLAUDE_CODE_USE_GLM",
+    "CLAUDE_CODE_USE_DEEPSEEK",
+    "CLAUDE_CODE_USE_QWEN",
     "CLAUDE_CODE_USE_GEMINI",
     "CLAUDE_CODE_USE_GROK",
     "CLAUDE_CODE_USE_BEDROCK",
     "CLAUDE_CODE_USE_VERTEX",
     "CLAUDE_CODE_USE_FOUNDRY",
-    "CLAUDE_CODE_USE_OPENAI",
   ] as const;
   const savedEnv: Record<string, string | undefined> = {};
 
@@ -37,9 +40,27 @@ describe("getAPIProvider", () => {
     delete process.env.CLAUDE_CODE_USE_VERTEX;
     delete process.env.CLAUDE_CODE_USE_FOUNDRY;
     delete process.env.CLAUDE_CODE_USE_OPENAI;
+    delete process.env.CLAUDE_CODE_USE_GLM;
+    delete process.env.CLAUDE_CODE_USE_DEEPSEEK;
+    delete process.env.CLAUDE_CODE_USE_QWEN;
     delete process.env.CLAUDE_CODE_USE_GEMINI;
     delete process.env.CLAUDE_CODE_USE_GROK;
     expect(getAPIProvider()).toBe("firstParty");
+  });
+
+  test('returns "glm" when CLAUDE_CODE_USE_GLM is set', () => {
+    process.env.CLAUDE_CODE_USE_GLM = "1";
+    expect(getAPIProvider()).toBe("glm");
+  });
+
+  test('returns "deepseek" when CLAUDE_CODE_USE_DEEPSEEK is set', () => {
+    process.env.CLAUDE_CODE_USE_DEEPSEEK = "1";
+    expect(getAPIProvider()).toBe("deepseek");
+  });
+
+  test('returns "qwen" when CLAUDE_CODE_USE_QWEN is set', () => {
+    process.env.CLAUDE_CODE_USE_QWEN = "1";
+    expect(getAPIProvider()).toBe("qwen");
   });
 
   test('returns "gemini" when CLAUDE_CODE_USE_GEMINI is set', () => {
@@ -77,8 +98,11 @@ describe("getAPIProvider", () => {
     expect(getAPIProvider()).toBe("bedrock");
   });
 
-  test("openai takes precedence over gemini and grok env vars", () => {
+  test("openai takes precedence over glm/deepseek/qwen/gemini/grok env vars", () => {
     process.env.CLAUDE_CODE_USE_OPENAI = "1";
+    process.env.CLAUDE_CODE_USE_GLM = "1";
+    process.env.CLAUDE_CODE_USE_DEEPSEEK = "1";
+    process.env.CLAUDE_CODE_USE_QWEN = "1";
     process.env.CLAUDE_CODE_USE_GEMINI = "1";
     process.env.CLAUDE_CODE_USE_GROK = "1";
     expect(getAPIProvider()).toBe("openai");

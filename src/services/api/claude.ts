@@ -1301,6 +1301,42 @@ export async function* queryModel(
     return
   }
 
+  if (getAPIProvider() === 'glm') {
+    const { queryModelGLM } = await import('./glm/index.js')
+    yield* queryModelGLM(
+      messagesForAPI,
+      systemPrompt,
+      filteredTools,
+      signal,
+      options,
+    )
+    return
+  }
+
+  if (getAPIProvider() === 'deepseek') {
+    const { queryModelDeepSeek } = await import('./deepseek/index.js')
+    yield* queryModelDeepSeek(
+      messagesForAPI,
+      systemPrompt,
+      filteredTools,
+      signal,
+      options,
+    )
+    return
+  }
+
+  if (getAPIProvider() === 'qwen') {
+    const { queryModelQwen } = await import('./qwen/index.js')
+    yield* queryModelQwen(
+      messagesForAPI,
+      systemPrompt,
+      filteredTools,
+      signal,
+      options,
+    )
+    return
+  }
+
   if (getAPIProvider() === 'gemini') {
     const { queryModelGemini } = await import('./gemini/index.js')
     yield* queryModelGemini(

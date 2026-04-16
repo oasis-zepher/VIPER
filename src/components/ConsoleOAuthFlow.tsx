@@ -50,6 +50,15 @@ type OAuthStatus =
       activeField: 'base_url' | 'api_key' | 'haiku_model' | 'sonnet_model' | 'opus_model'
     } // OpenAI Chat Completions API platform
   | {
+      state: 'glm_api'
+      baseUrl: string
+      apiKey: string
+      haikuModel: string
+      sonnetModel: string
+      opusModel: string
+      activeField: 'base_url' | 'api_key' | 'haiku_model' | 'sonnet_model' | 'opus_model'
+    } // GLM OpenAI-compatible platform
+  | {
       state: 'gemini_api'
       baseUrl: string
       apiKey: string
@@ -485,6 +494,15 @@ function OAuthStatusMessage({
                 {
                   label: (
                     <Text>
+                      GLM API · <Text dimColor>Zhipu GLM OpenAI-compatible API</Text>
+                      {'\n'}
+                    </Text>
+                  ),
+                  value: 'glm_api',
+                },
+                {
+                  label: (
+                    <Text>
                       Gemini API ·{' '}
                       <Text dimColor>Google Gemini native REST/SSE</Text>
                       {'\n'}
@@ -557,6 +575,17 @@ function OAuthStatusMessage({
                     haikuModel: process.env.OPENAI_DEFAULT_HAIKU_MODEL ?? '',
                     sonnetModel: process.env.OPENAI_DEFAULT_SONNET_MODEL ?? '',
                     opusModel: process.env.OPENAI_DEFAULT_OPUS_MODEL ?? '',
+                    activeField: 'base_url',
+                  })
+                } else if (value === 'glm_api') {
+                  logEvent('tengu_glm_api_selected', {})
+                  setOAuthStatus({
+                    state: 'glm_api',
+                    baseUrl: process.env.GLM_BASE_URL ?? 'https://open.bigmodel.cn/api/paas/v4/',
+                    apiKey: process.env.GLM_API_KEY ?? '',
+                    haikuModel: process.env.GLM_DEFAULT_HAIKU_MODEL ?? '',
+                    sonnetModel: process.env.GLM_DEFAULT_SONNET_MODEL ?? '',
+                    opusModel: process.env.GLM_DEFAULT_OPUS_MODEL ?? '',
                     activeField: 'base_url',
                   })
                 } else if (value === 'gemini_api') {
@@ -993,6 +1022,220 @@ function OAuthStatusMessage({
               {renderOpenAIRow('haiku_model', 'Haiku    ')}
               {renderOpenAIRow('sonnet_model', 'Sonnet   ')}
               {renderOpenAIRow('opus_model', 'Opus     ')}
+            </Box>
+            <Text dimColor>
+              Tab to switch · Enter on last field to save · Esc to go back
+            </Text>
+          </Box>
+        )
+      }
+
+    case 'glm_api':
+      {
+        type GLMField = 'base_url' | 'api_key' | 'haiku_model' | 'sonnet_model' | 'opus_model'
+        const GLM_FIELDS: GLMField[] = [
+          'base_url',
+          'api_key',
+          'haiku_model',
+          'sonnet_model',
+          'opus_model',
+        ]
+        const gp = oauthStatus as {
+          state: 'glm_api'
+          activeField: GLMField
+          baseUrl: string
+          apiKey: string
+          haikuModel: string
+          sonnetModel: string
+          opusModel: string
+        }
+        const { activeField, baseUrl, apiKey, haikuModel, sonnetModel, opusModel } = gp
+        const glmDisplayValues: Record<GLMField, string> = {
+          base_url: baseUrl,
+          api_key: apiKey,
+          haiku_model: haikuModel,
+          sonnet_model: sonnetModel,
+          opus_model: opusModel,
+        }
+
+        const [glmInputValue, setGlmInputValue] = useState(
+          () => glmDisplayValues[activeField],
+        )
+        const [glmInputCursorOffset, setGlmInputCursorOffset] = useState(
+          () => glmDisplayValues[activeField].length,
+        )
+
+        const buildGLMState = useCallback(
+          (field: GLMField, value: string, newActive?: GLMField) => {
+            const s = {
+              state: 'glm_api' as const,
+              activeField: newActive ?? activeField,
+              baseUrl,
+              apiKey,
+              haikuModel,
+              sonnetModel,
+              opusModel,
+            }
+            switch (field) {
+              case 'base_url':
+                return { ...s, baseUrl: value }
+              case 'api_key':
+                return { ...s, apiKey: value }
+              case 'haiku_model':
+                return { ...s, haikuModel: value }
+              case 'sonnet_model':
+                return { ...s, sonnetModel: value }
+              case 'opus_model':
+                return { ...s, opusModel: value }
+            }
+          },
+          [activeField, baseUrl, apiKey, haikuModel, sonnetModel, opusModel],
+        )
+
+        const doGLMSave = useCallback(() => {
+          const finalVals = { ...glmDisplayValues, [activeField]: glmInputValue }
+          const env: Record<string, string> = {}
+          if (finalVals.base_url) env.GLM_BASE_URL = finalVals.base_url
+          if (finalVals.api_key) env.GLM_API_KEY = finalVals.api_key
+          if (finalVals.haiku_model) env.GLM_DEFAULT_HAIKU_MODEL = finalVals.haiku_model
+          if (finalVals.sonnet_model) env.GLM_DEFAULT_SONNET_MODEL = finalVals.sonnet_model
+          if (finalVals.opus_model) env.GLM_DEFAULT_OPUS_MODEL = finalVals.opus_model
+          const { error } = updateSettingsForSource('userSettings', {
+            modelType: 'glm' as any,
+            env,
+          } as any)
+          if (error) {
+            setOAuthStatus({
+              state: 'error',
+              message: `Failed to save: ${error.message}`,
+              toRetry: {
+                state: 'glm_api',
+                baseUrl: 'https://open.bigmodel.cn/api/paas/v4/',
+                apiKey: '',
+                haikuModel: '',
+                sonnetModel: '',
+                opusModel: '',
+                activeField: 'base_url',
+              },
+            })
+          } else {
+            for (const [k, v] of Object.entries(env)) process.env[k] = v
+            setOAuthStatus({ state: 'success' })
+            void onDone()
+          }
+        }, [activeField, glmDisplayValues, glmInputValue, onDone, setOAuthStatus])
+
+        const handleGLMEnter = useCallback(() => {
+          const idx = GLM_FIELDS.indexOf(activeField)
+          setOAuthStatus(buildGLMState(activeField, glmInputValue))
+          if (idx === GLM_FIELDS.length - 1) {
+            doGLMSave()
+          } else {
+            const next = GLM_FIELDS[idx + 1]!
+            setGlmInputValue(glmDisplayValues[next] ?? '')
+            setGlmInputCursorOffset((glmDisplayValues[next] ?? '').length)
+          }
+        }, [
+          activeField,
+          buildGLMState,
+          doGLMSave,
+          glmDisplayValues,
+          glmInputValue,
+          setOAuthStatus,
+        ])
+
+        useKeybinding(
+          'tabs:next',
+          () => {
+            const idx = GLM_FIELDS.indexOf(activeField)
+            if (idx < GLM_FIELDS.length - 1) {
+              setOAuthStatus(
+                buildGLMState(activeField, glmInputValue, GLM_FIELDS[idx + 1]),
+              )
+              setGlmInputValue(glmDisplayValues[GLM_FIELDS[idx + 1]!] ?? '')
+              setGlmInputCursorOffset(
+                (glmDisplayValues[GLM_FIELDS[idx + 1]!] ?? '').length,
+              )
+            }
+          },
+          { context: 'Tabs' },
+        )
+        useKeybinding(
+          'tabs:previous',
+          () => {
+            const idx = GLM_FIELDS.indexOf(activeField)
+            if (idx > 0) {
+              setOAuthStatus(
+                buildGLMState(activeField, glmInputValue, GLM_FIELDS[idx - 1]),
+              )
+              setGlmInputValue(glmDisplayValues[GLM_FIELDS[idx - 1]!] ?? '')
+              setGlmInputCursorOffset(
+                (glmDisplayValues[GLM_FIELDS[idx - 1]!] ?? '').length,
+              )
+            }
+          },
+          { context: 'Tabs' },
+        )
+        useKeybinding(
+          'confirm:no',
+          () => {
+            setOAuthStatus({ state: 'idle' })
+          },
+          { context: 'Confirmation' },
+        )
+
+        const glmColumns = useTerminalSize().columns - 20
+
+        const renderGLMRow = (
+          field: GLMField,
+          label: string,
+          opts?: { mask?: boolean },
+        ) => {
+          const active = activeField === field
+          const val = glmDisplayValues[field]
+          return (
+            <Box>
+              <Text
+                backgroundColor={active ? 'suggestion' : undefined}
+                color={active ? 'inverseText' : undefined}
+              >
+                {` ${label} `}
+              </Text>
+              <Text> </Text>
+              {active ? (
+                <TextInput
+                  value={glmInputValue}
+                  onChange={setGlmInputValue}
+                  onSubmit={handleGLMEnter}
+                  cursorOffset={glmInputCursorOffset}
+                  onChangeCursorOffset={setGlmInputCursorOffset}
+                  columns={glmColumns}
+                  mask={opts?.mask ? '*' : undefined}
+                  focus={true}
+                />
+              ) : val ? (
+                <Text color="success">
+                  {opts?.mask
+                    ? val.slice(0, 8) + '\u00b7'.repeat(Math.max(0, val.length - 8))
+                    : val}
+                </Text>
+              ) : null}
+            </Box>
+          )
+        }
+
+        return (
+          <Box flexDirection="column" gap={1}>
+            <Text bold>GLM API Setup</Text>
+            <Text dimColor>
+              Configure Zhipu GLM&apos;s OpenAI-compatible chat completions API.
+            </Text>
+            <Box flexDirection="column" gap={1}>
+              {renderGLMRow('base_url', 'Base URL ')}
+              {renderGLMRow('api_key', 'API Key  ', { mask: true })}
+              {renderGLMRow('haiku_model', 'Haiku    ')}
+              {renderGLMRow('sonnet_model', 'Sonnet   ')}
+              {renderGLMRow('opus_model', 'Opus     ')}
             </Box>
             <Text dimColor>
               Tab to switch · Enter on last field to save · Esc to go back

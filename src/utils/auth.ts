@@ -114,11 +114,21 @@ export function isAnthropicAuthEnabled(): boolean {
 
   const settings = getSettings_DEPRECATED() || {}
   const is3P =
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI) ||
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_GLM) ||
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_DEEPSEEK) ||
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_QWEN) ||
     isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK) ||
     isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX) ||
     isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY) ||
     (settings as any).modelType === 'openai' ||
-    !!process.env.OPENAI_BASE_URL
+    (settings as any).modelType === 'glm' ||
+    (settings as any).modelType === 'deepseek' ||
+    (settings as any).modelType === 'qwen' ||
+    !!process.env.OPENAI_BASE_URL ||
+    !!process.env.GLM_BASE_URL ||
+    !!process.env.DEEPSEEK_BASE_URL ||
+    !!process.env.QWEN_BASE_URL
   const apiKeyHelper = settings.apiKeyHelper
   const hasExternalAuthToken =
     process.env.ANTHROPIC_AUTH_TOKEN ||

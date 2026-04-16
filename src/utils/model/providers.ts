@@ -8,6 +8,9 @@ export type APIProvider =
   | 'vertex'
   | 'foundry'
   | 'openai'
+  | 'glm'
+  | 'deepseek'
+  | 'qwen'
   | 'gemini'
   | 'grok'
 
@@ -15,12 +18,21 @@ export function getAPIProvider(): APIProvider {
   // 1. Check settings.json modelType field (highest priority)
   const modelType = getInitialSettings().modelType
   if (modelType === 'openai') return 'openai'
+  if (modelType === 'glm') return 'glm'
+  if (modelType === 'deepseek') return 'deepseek'
+  if (modelType === 'qwen') return 'qwen'
   if (modelType === 'gemini') return 'gemini'
   if (modelType === 'grok') return 'grok'
 
   // 2. Check environment variables (backward compatibility)
   return isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI)
     ? 'openai'
+    : isEnvTruthy(process.env.CLAUDE_CODE_USE_GLM)
+      ? 'glm'
+      : isEnvTruthy(process.env.CLAUDE_CODE_USE_DEEPSEEK)
+        ? 'deepseek'
+        : isEnvTruthy(process.env.CLAUDE_CODE_USE_QWEN)
+          ? 'qwen'
     : isEnvTruthy(process.env.CLAUDE_CODE_USE_GEMINI)
       ? 'gemini'
       : isEnvTruthy(process.env.CLAUDE_CODE_USE_GROK)

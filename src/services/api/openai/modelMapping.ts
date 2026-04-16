@@ -1,3 +1,8 @@
+import {
+  getProviderSessionDefaultModel,
+  providerModelLooksCanonical,
+} from '../../../utils/providerSessionConfig.js'
+
 /**
  * Default mapping from Anthropic model names to OpenAI model names.
  * Used only when ANTHROPIC_DEFAULT_*_MODEL env vars are not set.
@@ -43,6 +48,10 @@ export function resolveOpenAIModel(anthropicModel: string): string {
 
   // Strip [1m] suffix if present (Claude-specific modifier)
   const cleanModel = anthropicModel.replace(/\[1m\]$/, '')
+  const sessionDefaultModel = getProviderSessionDefaultModel('openai')
+  if (sessionDefaultModel && providerModelLooksCanonical(cleanModel)) {
+    return sessionDefaultModel
+  }
 
   // Check ANTHROPIC_DEFAULT_*_MODEL env vars based on model family
   const family = getModelFamily(cleanModel)

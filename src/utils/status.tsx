@@ -28,6 +28,11 @@ import {
   modelDisplayString,
 } from './model/model.js'
 import { getAPIProvider } from './model/providers.js'
+import {
+  getProviderSessionBaseUrl,
+  getProviderSessionDefaultModel,
+  isInteractiveAPIProvider,
+} from './providerSessionConfig.js'
 import { getMTLSConfig } from './mtls.js'
 import { checkInstall } from './nativeInstaller/index.js'
 import { getProxyUrl } from './proxy.js'
@@ -339,6 +344,9 @@ export function buildAPIProviderProperties(): Property[] {
       bedrock: 'AWS Bedrock',
       vertex: 'Google Vertex AI',
       foundry: 'Microsoft Foundry',
+      glm: 'GLM API',
+      deepseek: 'DeepSeek API',
+      qwen: 'Qwen API',
       gemini: 'Gemini API',
       grok: 'Grok API',
       openai: 'OpenAI API',
@@ -348,6 +356,16 @@ export function buildAPIProviderProperties(): Property[] {
       label: 'API provider',
       value: providerLabel,
     })
+
+    if (isInteractiveAPIProvider(apiProvider)) {
+      const sessionDefaultModel = getProviderSessionDefaultModel(apiProvider)
+      if (sessionDefaultModel) {
+        properties.push({
+          label: 'Session default model',
+          value: sessionDefaultModel,
+        })
+      }
+    }
   }
 
   if (apiProvider === 'firstParty') {
@@ -430,21 +448,50 @@ export function buildAPIProviderProperties(): Property[] {
     properties.push({
       label: 'Gemini base URL',
       value:
+        getProviderSessionBaseUrl('gemini') ||
         process.env.GEMINI_BASE_URL ||
         'https://generativelanguage.googleapis.com/v1beta',
     })
   } else if (apiProvider === 'grok') {
-    if (process.env.GROK_BASE_URL) {
+    const grokBaseUrl =
+      getProviderSessionBaseUrl('grok') || process.env.GROK_BASE_URL
+    if (grokBaseUrl) {
       properties.push({
         label: 'Grok base URL',
-        value: process.env.GROK_BASE_URL,
+        value: grokBaseUrl,
       })
     }
+  } else if (apiProvider === 'glm') {
+    properties.push({
+      label: 'GLM base URL',
+      value:
+        getProviderSessionBaseUrl('glm') ||
+        process.env.GLM_BASE_URL ||
+        'https://open.bigmodel.cn/api/paas/v4/',
+    })
+  } else if (apiProvider === 'deepseek') {
+    properties.push({
+      label: 'DeepSeek base URL',
+      value:
+        getProviderSessionBaseUrl('deepseek') ||
+        process.env.DEEPSEEK_BASE_URL ||
+        'https://api.deepseek.com',
+    })
+  } else if (apiProvider === 'qwen') {
+    properties.push({
+      label: 'Qwen base URL',
+      value:
+        getProviderSessionBaseUrl('qwen') ||
+        process.env.QWEN_BASE_URL ||
+        'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    })
   } else if (apiProvider === 'openai') {
-    if (process.env.OPENAI_BASE_URL) {
+    const openaiBaseUrl =
+      getProviderSessionBaseUrl('openai') || process.env.OPENAI_BASE_URL
+    if (openaiBaseUrl) {
       properties.push({
         label: 'OpenAI base URL',
-        value: process.env.OPENAI_BASE_URL,
+        value: openaiBaseUrl,
       })
     }
   }
