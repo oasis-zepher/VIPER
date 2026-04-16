@@ -5,6 +5,7 @@ import type {
 import type { AssistantMessage, UserMessage } from '../../../types/message.js'
 import { safeParseJSON } from '../../../utils/json.js'
 import type { SystemPrompt } from '../../../utils/systemPromptType.js'
+import { systemPromptToExternalText } from '../../../utils/systemPromptUtils.js'
 import {
   GEMINI_THOUGHT_SIGNATURE_FIELD,
   type GeminiContent,
@@ -60,8 +61,7 @@ export function anthropicMessagesToGemini(
 }
 
 function systemPromptToText(systemPrompt: SystemPrompt): string {
-  if (!systemPrompt || systemPrompt.length === 0) return ''
-  return systemPrompt.filter(Boolean).join('\n\n')
+  return systemPromptToExternalText(systemPrompt)
 }
 
 function convertInternalUserMessage(

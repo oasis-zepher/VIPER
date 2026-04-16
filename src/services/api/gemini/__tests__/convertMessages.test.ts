@@ -33,6 +33,21 @@ describe('anthropicMessagesToGemini', () => {
     })
   })
 
+  test('strips anthropic-only system prompt cache breakers for external providers', () => {
+    const result = anthropicMessagesToGemini(
+      [makeUserMsg('hello')],
+      [
+        'x-anthropic-billing-header: cc_version=2.1.888.fp123; cc_entrypoint=unknown;',
+        '__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__',
+        'You are helpful.',
+      ] as any,
+    )
+
+    expect(result.systemInstruction).toEqual({
+      parts: [{ text: 'You are helpful.' }],
+    })
+  })
+
   test('converts assistant tool_use to functionCall', () => {
     const result = anthropicMessagesToGemini(
       [

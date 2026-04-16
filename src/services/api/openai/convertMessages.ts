@@ -12,6 +12,7 @@ import type {
 } from 'openai/resources/chat/completions/completions.mjs'
 import type { AssistantMessage, UserMessage } from '../../../types/message.js'
 import type { SystemPrompt } from '../../../utils/systemPromptType.js'
+import { systemPromptToExternalText } from '../../../utils/systemPromptUtils.js'
 
 /**
  * Convert internal (UserMessage | AssistantMessage)[] to OpenAI-format messages.
@@ -55,10 +56,7 @@ export function anthropicMessagesToOpenAI(
 }
 
 function systemPromptToText(systemPrompt: SystemPrompt): string {
-  if (!systemPrompt || systemPrompt.length === 0) return ''
-  return systemPrompt
-    .filter(Boolean)
-    .join('\n\n')
+  return systemPromptToExternalText(systemPrompt)
 }
 
 function convertInternalUserMessage(

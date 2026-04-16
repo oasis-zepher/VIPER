@@ -36,6 +36,18 @@ describe('anthropicMessagesToOpenAI', () => {
     expect(result[0]).toEqual({ role: 'system', content: 'Part 1\n\nPart 2' })
   })
 
+  test('strips anthropic-only system prompt cache breakers for external providers', () => {
+    const result = anthropicMessagesToOpenAI(
+      [makeUserMsg('hi')],
+      [
+        'x-anthropic-billing-header: cc_version=2.1.888.fp123; cc_entrypoint=unknown;',
+        '__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__',
+        'You are helpful.',
+      ] as any,
+    )
+    expect(result[0]).toEqual({ role: 'system', content: 'You are helpful.' })
+  })
+
   test('skips empty system prompt', () => {
     const result = anthropicMessagesToOpenAI(
       [makeUserMsg('hi')],
