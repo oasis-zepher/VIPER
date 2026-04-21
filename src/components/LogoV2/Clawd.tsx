@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { Box, Text } from '@anthropic/ink'
+import { Box, Text, useTheme } from '@anthropic/ink'
 import { env } from '../../utils/env.js'
+import { type Theme } from '../../utils/theme.js'
 
 export type ClawdPose =
   | 'default'
@@ -12,87 +13,93 @@ type Props = {
   pose?: ClawdPose
 }
 
-// Standard-terminal pose fragments. Each row is split into segments so we can
-// vary only the parts that change (eyes, arms) while keeping the body/bg spans
-// stable. All poses end up 9 cols wide.
-//
-// arms-up: the row-2 arm shapes (▝▜ / ▛▘) move to row 1 as their
-// bottom-heavy mirrors (▗▟ / ▙▖) — same silhouette, one row higher.
-//
-// look-* use top-quadrant eye chars (▙/▟) so both eyes change from the
-// default (▛/▜, bottom pupils) — otherwise only one eye would appear to move.
-type Segments = {
-  /** row 1 left (no bg): optional raised arm + side */
-  r1L: string
-  /** row 1 eyes (with bg): left-eye, forehead, right-eye */
-  r1E: string
-  /** row 1 right (no bg): side + optional raised arm */
-  r1R: string
-  /** row 2 left (no bg): arm + body curve */
-  r2L: string
-  /** row 2 right (no bg): body curve + arm */
-  r2R: string
+type PenguinPalette = {
+  outline: keyof Theme
+  faceBackground: keyof Theme
+  eye: keyof Theme
+  bellyBackground: keyof Theme
+  beak: keyof Theme
 }
 
-const POSES: Record<ClawdPose, Segments> = {
-  default: { r1L: ' ▐', r1E: '▛███▜', r1R: '▌', r2L: '▝▜', r2R: '▛▘' },
-  'look-left': { r1L: ' ▐', r1E: '▟███▟', r1R: '▌', r2L: '▝▜', r2R: '▛▘' },
-  'look-right': { r1L: ' ▐', r1E: '▙███▙', r1R: '▌', r2L: '▝▜', r2R: '▛▘' },
-  'arms-up': { r1L: '▗▟', r1E: '▛███▜', r1R: '▙▖', r2L: ' ▜', r2R: '▛ ' },
+const LIGHT_THEMES = ['light', 'light-daltonized', 'light-ansi']
+
+const TOP_ROWS: Record<ClawdPose, string> = {
+  default: ' ▗▄▄▄▄▄▖ ',
+  'look-left': ' ▗▄▄▄▄▄▖ ',
+  'look-right': ' ▗▄▄▄▄▄▖ ',
+  'arms-up': '╲▗▄▄▄▄▄▖╱',
 }
 
-// Apple Terminal uses a bg-fill trick (see below), so only eye poses make
-// sense. Arm poses fall back to default.
-const APPLE_EYES: Record<ClawdPose, string> = {
-  default: ' ▗   ▖ ',
-  'look-left': ' ▘   ▘ ',
-  'look-right': ' ▝   ▝ ',
-  'arms-up': ' ▗   ▖ ',
+const EYES: Record<ClawdPose, string> = {
+  default: ' ◉ ◉ ',
+  'look-left': '◉◉   ',
+  'look-right': '   ◉◉',
+  'arms-up': ' ◉ ◉ ',
 }
 
 export function Clawd({ pose = 'default' }: Props = {}): React.ReactNode {
+  const [theme] = useTheme()
+  const palette = getPenguinPalette(theme)
+
   if (env.terminal === 'Apple_Terminal') {
-    return <AppleTerminalClawd pose={pose} />
+    return <AppleTerminalClawd palette={palette} pose={pose} />
   }
-  const p = POSES[pose]
+
   return (
-    <Box flexDirection="column">
+    <PenguinArt palette={palette} pose={pose} />
+  )
+}
+
+function PenguinArt({
+  palette,
+  pose,
+}: {
+  palette: PenguinPalette
+  pose: ClawdPose
+}): React.ReactNode {
+  return (
+    <Box flexDirection="column" alignItems="center">
       <Text>
-        <Text color="clawd_body">{p.r1L}</Text>
-        <Text color="clawd_body" backgroundColor="clawd_background">
-          {p.r1E}
-        </Text>
-        <Text color="clawd_body">{p.r1R}</Text>
+        <Text color={palette.outline}>{TOP_ROWS[pose]}</Text>
       </Text>
       <Text>
-        <Text color="clawd_body">{p.r2L}</Text>
-        <Text color="clawd_body" backgroundColor="clawd_background">
-          █████
+        <Text color={palette.outline}>{'▐ '}</Text>
+        <Text color={palette.eye} backgroundColor={palette.faceBackground}>
+          {EYES[pose]}
         </Text>
-        <Text color="clawd_body">{p.r2R}</Text>
+        <Text color={palette.outline}>{' ▌'}</Text>
       </Text>
-      <Text color="clawd_body">
-        {'  '}▘▘ ▝▝{'  '}
+      <Text>
+        <Text color={palette.outline}>{'▐ '}</Text>
+        <Text color={palette.beak} backgroundColor={palette.bellyBackground}>
+          {'  ▾  '}
+        </Text>
+        <Text color={palette.outline}>{' ▌'}</Text>
+      </Text>
+      <Text color={palette.beak}>
+        {'  ▝▘ ▝▝  '}
       </Text>
     </Box>
   )
 }
 
-function AppleTerminalClawd({ pose }: { pose: ClawdPose }): React.ReactNode {
-  // Apple's Terminal renders vertical space between chars by default.
-  // It does NOT render vertical space between background colors
-  // so we use background color to draw the main shape.
-  return (
-    <Box flexDirection="column" alignItems="center">
-      <Text>
-        <Text color="clawd_body">▗</Text>
-        <Text color="clawd_background" backgroundColor="clawd_body">
-          {APPLE_EYES[pose]}
-        </Text>
-        <Text color="clawd_body">▖</Text>
-      </Text>
-      <Text backgroundColor="clawd_body">{' '.repeat(7)}</Text>
-      <Text color="clawd_body">▘▘ ▝▝</Text>
-    </Box>
-  )
+function AppleTerminalClawd({
+  palette,
+  pose,
+}: {
+  palette: PenguinPalette
+  pose: ClawdPose
+}): React.ReactNode {
+  return <PenguinArt palette={palette} pose={pose} />
+}
+
+function getPenguinPalette(theme: string): PenguinPalette {
+  const isLightTheme = LIGHT_THEMES.includes(theme)
+  return {
+    outline: 'text',
+    faceBackground: isLightTheme ? 'text' : 'clawd_background',
+    eye: isLightTheme ? 'inverseText' : 'text',
+    bellyBackground: isLightTheme ? 'inverseText' : 'text',
+    beak: 'warning',
+  }
 }
