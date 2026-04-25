@@ -24,6 +24,9 @@ import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
 } from 'src/utils/model/providers.js'
+import { getProviderEntry } from './providerRegistry.js'
+// Side-effect: register built-in providers on first import
+import './providerRegistrations.js'
 import {
   getAttributionHeader,
   getCLISyspromptPrefix,
@@ -1332,18 +1335,12 @@ async function* queryModel(
     API_MAX_MEDIA_PER_REQUEST,
   )
 
-  // OpenAI-compatible provider: delegate to the OpenAI adapter layer
+  // Non-Anthropic providers: delegate to registered adapter
   // after shared preprocessing (message normalization, tool filtering,
   // media stripping) but before Anthropic-specific logic (betas, thinking, caching).
-  if (getAPIProvider() === 'openai') {
-    const { queryModelOpenAI } = await import('./openai/index.js')
-    yield* queryModelOpenAI(messagesForAPI, systemPrompt, filteredTools, signal, options)
-    return
-  }
-
-  if (getAPIProvider() === 'gemini') {
-    const { queryModelGemini } = await import('./gemini/index.js')
-    yield* queryModelGemini(
+  const providerEntry = getProviderEntry(getAPIProvider())
+  if (providerEntry?.kind === 'adapter') {
+    yield* providerEntry.query(
       messagesForAPI,
       systemPrompt,
       filteredTools,
@@ -1351,12 +1348,6 @@ async function* queryModel(
       options,
       thinkingConfig,
     )
-    return
-  }
-
-  if (getAPIProvider() === 'grok') {
-    const { queryModelGrok } = await import('./grok/index.js')
-    yield* queryModelGrok(messagesForAPI, systemPrompt, filteredTools, signal, options)
     return
   }
 
