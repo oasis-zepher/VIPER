@@ -20,6 +20,7 @@ import { geminiProviderPresets } from "@/config/geminiProviderPresets";
 import { extractCodexBaseUrl } from "@/utils/providerConfigUtils";
 import type { OpenClawSuggestedDefaults } from "@/config/openclawProviderPresets";
 import type { UniversalProviderPreset } from "@/config/universalProviderPresets";
+import { isClaudeCompatibleApp } from "@/lib/appCompat";
 
 interface AddProviderDialogProps {
   open: boolean;
@@ -40,6 +41,7 @@ export function AddProviderDialog({
   onSubmit,
 }: AddProviderDialogProps) {
   const { t } = useTranslation();
+  const formAppId: AppId = isClaudeCompatibleApp(appId) ? "claude" : appId;
   // OpenCode and OpenClaw don't support universal providers
   const showUniversalTab = appId !== "opencode" && appId !== "openclaw";
   const [activeTab, setActiveTab] = useState<"app-specific" | "universal">(
@@ -127,7 +129,7 @@ export function AddProviderDialog({
         };
 
         if (values.presetId) {
-          if (appId === "claude") {
+          if (isClaudeCompatibleApp(appId)) {
             const presets = providerPresets;
             const presetIndex = parseInt(
               values.presetId.replace("claude-", ""),
@@ -173,7 +175,7 @@ export function AddProviderDialog({
           }
         }
 
-        if (appId === "claude") {
+        if (isClaudeCompatibleApp(appId)) {
           const env = parsedConfig.env as Record<string, any> | undefined;
           if (env?.ANTHROPIC_BASE_URL) {
             addUrl(env.ANTHROPIC_BASE_URL);
@@ -286,10 +288,13 @@ export function AddProviderDialog({
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as "app-specific" | "universal")}
         >
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="app-specific">
-              {t(`apps.${appId}`)} {t("provider.tabProvider")}
-            </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="app-specific">
+                {t(`apps.${appId}`, {
+                  defaultValue: appId === "vipercode" ? "Vipercode" : appId,
+                })}{" "}
+                {t("provider.tabProvider")}
+              </TabsTrigger>
             <TabsTrigger value="universal">
               {t("provider.tabUniversal")}
             </TabsTrigger>
@@ -297,7 +302,7 @@ export function AddProviderDialog({
 
           <TabsContent value="app-specific" className="mt-0">
             <ProviderForm
-              appId={appId}
+              appId={formAppId}
               submitLabel={t("common.add")}
               onSubmit={handleSubmit}
               onCancel={() => onOpenChange(false)}
@@ -313,7 +318,7 @@ export function AddProviderDialog({
       ) : (
         // OpenCode/OpenClaw: directly show form without tabs
         <ProviderForm
-          appId={appId}
+          appId={formAppId}
           submitLabel={t("common.add")}
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}

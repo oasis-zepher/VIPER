@@ -20,6 +20,7 @@ import { FailoverPriorityBadge } from "@/components/providers/FailoverPriorityBa
 import { extractCodexBaseUrl } from "@/utils/providerConfigUtils";
 import { useProviderHealth } from "@/lib/query/failover";
 import { useUsageQuery } from "@/lib/query/queries";
+import { isClaudeCompatibleApp } from "@/lib/appCompat";
 
 interface DragHandleProps {
   attributes: DraggableAttributes;
@@ -62,7 +63,7 @@ interface ProviderCardProps {
 /** 判断是否为官方供应商（无自定义 base URL / API key，直连官方 API） */
 function isOfficialProvider(provider: Provider, appId: AppId): boolean {
   const config = provider.settingsConfig as Record<string, any>;
-  if (appId === "claude") {
+  if (isClaudeCompatibleApp(appId)) {
     const baseUrl = config?.env?.ANTHROPIC_BASE_URL;
     return !baseUrl || (typeof baseUrl === "string" && baseUrl.trim() === "");
   }

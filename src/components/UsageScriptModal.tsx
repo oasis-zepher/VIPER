@@ -9,6 +9,7 @@ import { copilotGetUsage, copilotGetUsageForAccount } from "@/lib/api/copilot";
 import { useSettingsQuery } from "@/lib/query";
 import { resolveManagedAccountId } from "@/lib/authBinding";
 import { extractCodexBaseUrl } from "@/utils/providerConfigUtils";
+import { isClaudeCompatibleApp } from "@/lib/appCompat";
 import JsonEditor from "./JsonEditor";
 import * as prettier from "prettier/standalone";
 import * as parserBabel from "prettier/parser-babel";
@@ -181,7 +182,7 @@ const UsageScriptModal: React.FC<UsageScriptModalProps> = ({
       if (!config) return { apiKey: undefined, baseUrl: undefined };
 
       // 处理不同应用的配置格式
-      if (appId === "claude") {
+      if (isClaudeCompatibleApp(appId)) {
         // Claude: { env: { ANTHROPIC_AUTH_TOKEN | ANTHROPIC_API_KEY, ANTHROPIC_BASE_URL } }
         const env = (config as any).env || {};
         return {

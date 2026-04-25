@@ -82,6 +82,7 @@ import EnvPanel from "@/components/openclaw/EnvPanel";
 import ToolsPanel from "@/components/openclaw/ToolsPanel";
 import AgentsDefaultsPanel from "@/components/openclaw/AgentsDefaultsPanel";
 import OpenClawHealthBanner from "@/components/openclaw/OpenClawHealthBanner";
+import { isClaudeCompatibleApp, normalizeAppId } from "@/lib/appCompat";
 
 type View =
   | "providers"
@@ -110,6 +111,7 @@ const HEADER_HEIGHT = 64; // px
 const STORAGE_KEY = "cc-switch-last-app";
 const VALID_APPS: AppId[] = [
   "claude",
+  "vipercode",
   "codex",
   "gemini",
   "opencode",
@@ -170,6 +172,7 @@ function App() {
   const contentTopOffset = dragBarHeight + HEADER_HEIGHT;
   const visibleApps: VisibleApps = settingsData?.visibleApps ?? {
     claude: true,
+    vipercode: true,
     codex: true,
     gemini: true,
     opencode: true,
@@ -178,6 +181,7 @@ function App() {
 
   const getFirstVisibleApp = (): AppId => {
     if (visibleApps.claude) return "claude";
+    if (visibleApps.vipercode) return "vipercode";
     if (visibleApps.codex) return "codex";
     if (visibleApps.gemini) return "gemini";
     if (visibleApps.opencode) return "opencode";
@@ -232,10 +236,11 @@ function App() {
     takeoverStatus,
     status: proxyStatus,
   } = useProxyStatus();
-  const isCurrentAppTakeoverActive = takeoverStatus?.[activeApp] || false;
+  const isCurrentAppTakeoverActive =
+    takeoverStatus?.[normalizeAppId(activeApp)] || false;
   const activeProviderId = useMemo(() => {
     const target = proxyStatus?.active_targets?.find(
-      (t) => t.app_type === activeApp,
+      (t) => t.app_type === normalizeAppId(activeApp),
     );
     return target?.provider_id;
   }, [proxyStatus?.active_targets, activeApp]);
@@ -258,6 +263,7 @@ function App() {
   const hasSkillsSupport = true;
   const hasSessionSupport =
     activeApp === "claude" ||
+    activeApp === "vipercode" ||
     activeApp === "codex" ||
     activeApp === "opencode" ||
     activeApp === "openclaw" ||
@@ -317,7 +323,7 @@ function App() {
       try {
         unsubscribe = await providersApi.onSwitched(
           async (event: ProviderSwitchEvent) => {
-            if (event.appType === activeApp) {
+            if (normalizeAppId(event.appType) === normalizeAppId(activeApp)) {
               await refetch();
             }
           },
@@ -968,7 +974,9 @@ function App() {
                       onConfigureUsage={setUsageProvider}
                       onOpenWebsite={handleOpenWebsite}
                       onOpenTerminal={
-                        activeApp === "claude" ? handleOpenTerminal : undefined
+                        isClaudeCompatibleApp(activeApp)
+                          ? handleOpenTerminal
+                          : undefined
                       }
                       onCreate={() => setIsAddOpen(true)}
                       onSetAsDefault={

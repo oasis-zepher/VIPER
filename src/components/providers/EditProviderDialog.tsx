@@ -9,6 +9,7 @@ import {
   type ProviderFormValues,
 } from "@/components/providers/forms/ProviderForm";
 import { openclawApi, providersApi, vscodeApi, type AppId } from "@/lib/api";
+import { isClaudeCompatibleApp } from "@/lib/appCompat";
 
 interface EditProviderDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function EditProviderDialog({
   isProxyTakeover = false,
 }: EditProviderDialogProps) {
   const { t } = useTranslation();
+  const formAppId: AppId = isClaudeCompatibleApp(appId) ? "claude" : appId;
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 
   // 默认使用传入的 provider.settingsConfig，若当前编辑对象是"当前生效供应商"，则尝试读取实时配置替换初始值
@@ -219,7 +221,7 @@ export function EditProviderDialog({
       }
     >
       <ProviderForm
-        appId={appId}
+        appId={formAppId}
         providerId={provider.id}
         submitLabel={t("common.save")}
         onSubmit={handleSubmit}

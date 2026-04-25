@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import type { AppId } from "@/lib/api";
+import { getAppDisplayName } from "@/lib/appCompat";
 
 interface FailoverToggleProps {
   className?: string;
@@ -29,12 +30,7 @@ export function FailoverToggle({ className, activeApp }: FailoverToggleProps) {
     setEnabled.mutate({ appType: activeApp, enabled: checked });
   };
 
-  const appLabel =
-    activeApp === "claude"
-      ? "Claude"
-      : activeApp === "codex"
-        ? "Codex"
-        : "Gemini";
+  const appLabel = getAppDisplayName(activeApp);
 
   const tooltipText = isEnabled
     ? t("failover.tooltip.enabled", {

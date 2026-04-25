@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import MarkdownEditor from "@/components/MarkdownEditor";
 import type { Prompt, AppId } from "@/lib/api";
+import { isClaudeCompatibleApp } from "@/lib/appCompat";
 
 interface PromptFormModalProps {
   appId: AppId;
@@ -29,14 +30,19 @@ const PromptFormModal: React.FC<PromptFormModalProps> = ({
   onClose,
 }) => {
   const { t } = useTranslation();
-  const appName = t(`apps.${appId}`);
+  const appName = t(`apps.${appId}`, {
+    defaultValue: appId === "vipercode" ? "Vipercode" : appId,
+  });
   const filenameMap: Record<Exclude<AppId, "openclaw">, string> = {
     claude: "CLAUDE.md",
+    vipercode: "CLAUDE.md",
     codex: "AGENTS.md",
     gemini: "GEMINI.md",
     opencode: "AGENTS.md",
   };
-  const filename = filenameMap[appId as Exclude<AppId, "openclaw">];
+  const filename = isClaudeCompatibleApp(appId)
+    ? filenameMap.vipercode
+    : filenameMap[appId as Exclude<AppId, "openclaw">];
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");

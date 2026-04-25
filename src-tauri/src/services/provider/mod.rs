@@ -1746,6 +1746,8 @@ impl ProviderService {
 
         const TOP_LEVEL_EXCLUDES: &[&str] = &[
             "apiBaseUrl",
+            "model",
+            "modelType",
             // Legacy model fields
             "primaryModel",
             "smallFastModel",

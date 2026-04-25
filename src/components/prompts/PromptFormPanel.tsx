@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import MarkdownEditor from "@/components/MarkdownEditor";
 import { FullScreenPanel } from "@/components/common/FullScreenPanel";
 import type { Prompt, AppId } from "@/lib/api";
+import { isClaudeCompatibleApp } from "@/lib/appCompat";
 
 interface PromptFormPanelProps {
   appId: AppId;
@@ -23,15 +24,20 @@ const PromptFormPanel: React.FC<PromptFormPanelProps> = ({
   onClose,
 }) => {
   const { t } = useTranslation();
-  const appName = t(`apps.${appId}`);
+  const appName = t(`apps.${appId}`, {
+    defaultValue: appId === "vipercode" ? "Vipercode" : appId,
+  });
   const filenameMap: Record<AppId, string> = {
     claude: "CLAUDE.md",
+    vipercode: "CLAUDE.md",
     codex: "AGENTS.md",
     gemini: "GEMINI.md",
     opencode: "AGENTS.md",
     openclaw: "AGENTS.md",
   };
-  const filename = filenameMap[appId];
+  const filename = isClaudeCompatibleApp(appId)
+    ? filenameMap.vipercode
+    : filenameMap[appId];
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");

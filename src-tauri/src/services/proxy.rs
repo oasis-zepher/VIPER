@@ -92,6 +92,7 @@ impl ProxyService {
         let root = config
             .as_object_mut()
             .expect("Claude config should be normalized to an object");
+        root.remove("modelType");
         let env = root.entry("env".to_string()).or_insert_with(|| json!({}));
         if !env.is_object() {
             *env = json!({});
@@ -129,20 +130,113 @@ impl ProxyService {
         }
     }
 
+    fn merge_claude_live_with_effective_settings(
+        live_config: &Value,
+        effective_settings: &Value,
+    ) -> Value {
+        let mut merged = if live_config.is_object() {
+            live_config.clone()
+        } else {
+            json!({})
+        };
+
+        let Some(merged_root) = merged.as_object_mut() else {
+            return effective_settings.clone();
+        };
+
+        if let Some(effective_root) = effective_settings.as_object() {
+            for (key, value) in effective_root {
+                if key == "env" {
+                    let env = merged_root
+                        .entry("env".to_string())
+                        .or_insert_with(|| json!({}));
+                    if !env.is_object() {
+                        *env = json!({});
+                    }
+
+                    if let Some(source_env) = value.as_object() {
+                        let target_env = env
+                            .as_object_mut()
+                            .expect("Claude env should be normalized to an object");
+                        for (env_key, env_value) in source_env {
+                            target_env.insert(env_key.clone(), env_value.clone());
+                        }
+                    } else {
+                        *env = value.clone();
+                    }
+                } else {
+                    merged_root.insert(key.clone(), value.clone());
+                }
+            }
+        }
+
+        merged_root.remove("modelType");
+
+        let effective_model = effective_settings
+            .get("model")
+            .and_then(|v| v.as_str())
+            .or_else(|| {
+                effective_settings
+                    .get("env")
+                    .and_then(|v| v.get("ANTHROPIC_MODEL"))
+                    .and_then(|v| v.as_str())
+            });
+        if let Some(model) = effective_model {
+            merged_root.insert("model".to_string(), json!(model));
+        }
+
+        merged
+    }
+
+    fn merge_current_claude_provider_into_live(
+        &self,
+        live_config: &Value,
+    ) -> Result<Value, String> {
+        let current_id = crate::settings::get_effective_current_provider(&self.db, &AppType::Claude)
+            .map_err(|e| format!("获取 Claude 当前供应商失败: {e}"))?;
+
+        let Some(current_id) = current_id else {
+            return Ok(live_config.clone());
+        };
+
+        let Some(provider) = self
+            .db
+            .get_provider_by_id(&current_id, AppType::Claude.as_str())
+            .map_err(|e| format!("读取 Claude 当前供应商失败: {e}"))?
+        else {
+            return Ok(live_config.clone());
+        };
+
+        let effective_settings = build_effective_settings_with_common_config(
+            self.db.as_ref(),
+            &AppType::Claude,
+            &provider,
+        )
+        .map_err(|e| format!("构建 Claude 有效配置失败: {e}"))?;
+
+        Ok(Self::merge_claude_live_with_effective_settings(
+            live_config,
+            &effective_settings,
+        ))
+    }
+
     pub async fn sync_claude_live_from_provider_while_proxy_active(
         &self,
         provider: &Provider,
     ) -> Result<(), String> {
-        let mut effective_settings = build_effective_settings_with_common_config(
+        let live_config = self.read_claude_live().unwrap_or_else(|_| json!({}));
+        let effective_settings = build_effective_settings_with_common_config(
             self.db.as_ref(),
             &AppType::Claude,
             provider,
         )
         .map_err(|e| format!("构建 claude 有效配置失败: {e}"))?;
+        let mut merged_settings =
+            Self::merge_claude_live_with_effective_settings(&live_config, &effective_settings);
         let (proxy_url, _) = self.build_proxy_urls().await?;
 
-        Self::apply_claude_takeover_fields(&mut effective_settings, &proxy_url);
-        self.write_claude_live(&effective_settings)?;
+        Self::apply_claude_takeover_fields(&mut merged_settings, &proxy_url);
+        self.write_claude_live(&merged_settings)?;
         Ok(())
     }
 
@@ -932,6 +1026,7 @@ impl ProxyService {
 
         // Claude: 修改 ANTHROPIC_BASE_URL，使用占位符替代真实 Token（代理会注入真实 Token）
         if let Ok(mut live_config) = self.read_claude_live() {
+            live_config = self.merge_current_claude_provider_into_live(&live_config)?;
             Self::apply_claude_takeover_fields(&mut live_config, &proxy_url);
             self.write_claude_live(&live_config)?;
             log::info!("Claude Live 配置已接管，代理地址: {proxy_url}");
@@ -982,6 +1077,7 @@ impl ProxyService {
         match app_type {
             AppType::Claude => {
                 let mut live_config = self.read_claude_live()?;
+                live_config = self.merge_current_claude_provider_into_live(&live_config)?;
                 Self::apply_claude_takeover_fields(&mut live_config, &proxy_url);
                 self.write_claude_live(&live_config)?;
                 log::info!("Claude Live 配置已接管，代理地址: {proxy_url}");
@@ -1039,6 +1135,7 @@ impl ProxyService {
         match app_type {
             AppType::Claude => {
                 if let Ok(mut live_config) = self.read_claude_live() {
+                    live_config = self.merge_current_claude_provider_into_live(&live_config)?;
                     Self::apply_claude_takeover_fields(&mut live_config, &proxy_url);
                     let _ = self.write_claude_live(&live_config);
                 }
@@ -2347,6 +2444,15 @@ model = "gpt-5.1-codex"
                 .is_none(),
             "Claude model override fields should be removed in takeover mode"
         );
+        assert_eq!(
+            live.get("model").and_then(|v| v.as_str()),
+            Some("claude-new"),
+            "top-level Claude model should follow the current provider during takeover"
+        );
+        assert!(
+            live.get("modelType").is_none(),
+            "stale Claude modelType should be stripped in takeover mode"
+        );
 
         let backup = db
             .get_live_backup("claude")
@@ -2355,6 +2461,97 @@ model = "gpt-5.1-codex"
             .expect("backup exists");
         let expected = serde_json::to_string(&provider_b.settings_config).expect("serialize");
         assert_eq!(backup.original_config, expected);
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn takeover_claude_live_uses_current_provider_model_and_preserves_unrelated_settings() {
+        let _home = TempHome::new();
+        crate::settings::reload_settings().expect("reload settings");
+
+        let db = Arc::new(Database::memory().expect("init db"));
+        let service = ProxyService::new(db.clone());
+
+        let provider = Provider::with_id(
+            "vipercode-codex-oauth".to_string(),
+            "OpenAI".to_string(),
+            json!({
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://chatgpt.com/backend-api/codex",
+                    "ANTHROPIC_MODEL": "gpt-5.4",
+                    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gpt-5.4-mini",
+                    "ANTHROPIC_DEFAULT_SONNET_MODEL": "gpt-5.4",
+                    "ANTHROPIC_DEFAULT_OPUS_MODEL": "gpt-5.4"
+                }
+            }),
+            None,
+        );
+
+        db.save_provider("claude", &provider).expect("save provider");
+        db.set_current_provider("claude", "vipercode-codex-oauth")
+            .expect("set db current provider");
+        crate::settings::set_current_provider(
+            &AppType::Claude,
+            Some("vipercode-codex-oauth"),
+        )
+        .expect("set local current provider");
+
+        service
+            .write_claude_live(&json!({
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://open.bigmodel.cn/api/anthropic",
+                    "ANTHROPIC_AUTH_TOKEN": "old-token"
+                },
+                "modelType": "glm",
+                "model": "claude-opus-4-6[1m]",
+                "enabledPlugins": {
+                    "claude-hud@claude-hud": true
+                }
+            }))
+            .expect("seed live config");
+
+        service
+            .takeover_live_config_strict(&AppType::Claude)
+            .await
+            .expect("takeover claude live");
+
+        let live = service.read_claude_live().expect("read live config");
+        assert_eq!(
+            live.get("model").and_then(|v| v.as_str()),
+            Some("gpt-5.4"),
+            "takeover should promote current provider model into top-level Claude model"
+        );
+        assert!(
+            live.get("modelType").is_none(),
+            "takeover should strip stale modelType from Claude live config"
+        );
+        assert_eq!(
+            live.get("enabledPlugins")
+                .and_then(|v| v.get("claude-hud@claude-hud"))
+                .and_then(|v| v.as_bool()),
+            Some(true),
+            "takeover should preserve unrelated user settings"
+        );
+        assert_eq!(
+            live.get("env")
+                .and_then(|env| env.get("ANTHROPIC_BASE_URL"))
+                .and_then(|v| v.as_str()),
+            Some("http://127.0.0.1:15721"),
+            "proxy base URL should be active after takeover"
+        );
+        assert_eq!(
+            live.get("env")
+                .and_then(|env| env.get("ANTHROPIC_AUTH_TOKEN"))
+                .and_then(|v| v.as_str()),
+            Some(PROXY_TOKEN_PLACEHOLDER),
+            "proxy-managed auth placeholder should be present after takeover"
+        );
+        assert!(
+            live.get("env")
+                .and_then(|env| env.get("ANTHROPIC_MODEL"))
+                .is_none(),
+            "takeover should not leave stale provider model overrides in env"
+        );
     }
 
     #[tokio::test]

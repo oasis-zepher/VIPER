@@ -2,11 +2,12 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import type { AppId } from "@/lib/api/types";
 import { APP_IDS, APP_ICON_MAP } from "@/config/appConfig";
+import type { BackendAppId } from "@/lib/appCompat";
 
 interface AppCountBarProps {
   totalLabel: string;
-  counts: Record<AppId, number>;
-  appIds?: AppId[];
+  counts: Partial<Record<AppId, number>>;
+  appIds?: BackendAppId[];
 }
 
 export const AppCountBar: React.FC<AppCountBarProps> = ({
@@ -27,7 +28,7 @@ export const AppCountBar: React.FC<AppCountBarProps> = ({
             className={APP_ICON_MAP[app].badgeClass}
           >
             <span className="opacity-75">{APP_ICON_MAP[app].label}:</span>
-            <span className="font-bold ml-1">{counts[app]}</span>
+            <span className="font-bold ml-1">{counts[app] ?? 0}</span>
           </Badge>
         ))}
       </div>

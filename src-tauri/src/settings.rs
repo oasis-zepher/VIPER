@@ -29,6 +29,8 @@ pub struct VisibleApps {
     #[serde(default = "default_true")]
     pub claude: bool,
     #[serde(default = "default_true")]
+    pub vipercode: bool,
+    #[serde(default = "default_true")]
     pub codex: bool,
     #[serde(default = "default_true")]
     pub gemini: bool,
@@ -42,6 +44,7 @@ impl Default for VisibleApps {
     fn default() -> Self {
         Self {
             claude: true,
+            vipercode: true,
             codex: true,
             gemini: true,
             opencode: true,

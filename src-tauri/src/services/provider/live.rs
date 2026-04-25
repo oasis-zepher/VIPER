@@ -497,6 +497,36 @@ pub(crate) fn build_effective_settings_with_common_config(
         }
     }
 
+    if matches!(app_type, AppType::Claude) {
+        if !effective_settings.is_object() {
+            effective_settings = json!({});
+        }
+
+        if let Some(root) = effective_settings.as_object_mut() {
+            // Claude common config is for shared UX settings such as plugins,
+            // status line, or marketplaces. Provider-specific routing fields
+            // like model/modelType must come from the active provider so a
+            // stale snippet cannot force the live config back to an old model.
+            root.remove("modelType");
+
+            let provider_model = provider
+                .settings_config
+                .get("model")
+                .and_then(Value::as_str)
+                .or_else(|| {
+                    provider
+                        .settings_config
+                        .get("env")
+                        .and_then(|env| env.get("ANTHROPIC_MODEL"))
+                        .and_then(Value::as_str)
+                });
+
+            if let Some(model) = provider_model {
+                root.insert("model".to_string(), Value::String(model.to_string()));
+            }
+        }
+    }
+
     Ok(effective_settings)
 }
 
@@ -1461,5 +1491,54 @@ mod tests {
             .map(|value| value.as_str().expect("tool id should be string"))
             .collect();
         assert_eq!(values, vec!["tool2"]);
+    }
+
+    #[test]
+    fn build_effective_settings_with_common_config_preserves_claude_provider_model_over_stale_snippet(
+    ) {
+        let db = Database::memory().expect("in-memory database should initialize");
+        db.set_config_snippet(
+            "claude",
+            Some(
+                json!({
+                    "modelType": "glm",
+                    "model": "claude-opus-4-6[1m]",
+                    "enabledPlugins": {
+                        "claude-hud@claude-hud": true
+                    }
+                })
+                .to_string(),
+            ),
+        )
+        .expect("setting config snippet should succeed");
+
+        let mut provider = Provider::with_id(
+            "vipercode-codex-oauth".to_string(),
+            "OpenAI".to_string(),
+            json!({
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://chatgpt.com/backend-api/codex",
+                    "ANTHROPIC_MODEL": "gpt-5.4"
+                }
+            }),
+            None,
+        );
+        provider.meta = Some(crate::provider::ProviderMeta {
+            common_config_enabled: Some(true),
+            ..Default::default()
+        });
+
+        let effective = build_effective_settings_with_common_config(&db, &AppType::Claude, &provider)
+            .expect("effective settings should build");
+
+        assert_eq!(effective["model"], json!("gpt-5.4"));
+        assert!(
+            effective.get("modelType").is_none(),
+            "stale common-config modelType should not leak into effective Claude settings"
+        );
+        assert_eq!(
+            effective["enabledPlugins"]["claude-hud@claude-hud"],
+            json!(true)
+        );
     }
 }

@@ -218,6 +218,26 @@ struct CodexOAuthStore {
     default_account_id: Option<String>,
 }
 
+#[derive(Debug, Clone, Default, Deserialize)]
+struct LegacyCodexAuthFile {
+    #[serde(default)]
+    auth_mode: Option<String>,
+    #[serde(default)]
+    tokens: Option<LegacyCodexAuthTokens>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+struct LegacyCodexAuthTokens {
+    #[serde(default)]
+    id_token: Option<String>,
+    #[serde(default)]
+    access_token: Option<String>,
+    #[serde(default)]
+    refresh_token: Option<String>,
+    #[serde(default)]
+    account_id: Option<String>,
+}
+
 /// Codex OAuth 认证管理器（多账号）
 pub struct CodexOAuthManager {
     accounts: Arc<RwLock<HashMap<String, CodexAccountData>>>,
@@ -249,6 +269,10 @@ impl CodexOAuthManager {
 
         if let Err(e) = manager.load_from_disk_sync() {
             log::warn!("[CodexOAuth] 加载存储失败: {e}");
+        }
+
+        if let Err(e) = manager.import_legacy_codex_auth_sync() {
+            log::warn!("[CodexOAuth] 导入现有 Codex 登录失败: {e}");
         }
 
         manager
@@ -865,6 +889,125 @@ impl CodexOAuthManager {
         Ok(())
     }
 
+    fn import_legacy_codex_auth_sync(&self) -> Result<(), CodexOAuthError> {
+        if self.storage_path.exists() {
+            return Ok(());
+        }
+
+        let has_accounts = self
+            .accounts
+            .try_read()
+            .map(|accounts| !accounts.is_empty())
+            .unwrap_or(false);
+        if has_accounts {
+            return Ok(());
+        }
+
+        let auth_path = crate::codex_config::get_codex_auth_path();
+        let codex_dir = auth_path
+            .parent()
+            .map(PathBuf::from)
+            .unwrap_or_else(crate::codex_config::get_codex_config_dir);
+        let candidates = [
+            auth_path,
+            codex_dir.join("cc-studio.back.auth.json"),
+            codex_dir.join("cc-studio.snapshot.auth.json"),
+        ];
+
+        for candidate in candidates {
+            let Some(store) = Self::parse_legacy_codex_auth_store_from_path(&candidate)? else {
+                continue;
+            };
+
+            if let Ok(mut accounts) = self.accounts.try_write() {
+                *accounts = store.accounts.clone();
+            }
+            if let Ok(mut default) = self.default_account_id.try_write() {
+                *default = store.default_account_id.clone();
+            }
+
+            let content = serde_json::to_string_pretty(&store)
+                .map_err(|e| CodexOAuthError::ParseError(e.to_string()))?;
+            self.write_store_atomic(&content)?;
+            log::info!(
+                "[CodexOAuth] 已从 {} 导入 {} 个现有账号",
+                candidate.display(),
+                store.accounts.len()
+            );
+            break;
+        }
+
+        Ok(())
+    }
+
+    fn parse_legacy_codex_auth_store_from_path(
+        path: &PathBuf,
+    ) -> Result<Option<CodexOAuthStore>, CodexOAuthError> {
+        if !path.exists() {
+            return Ok(None);
+        }
+
+        let content = fs::read_to_string(path)?;
+        Self::parse_legacy_codex_auth_store(&content)
+    }
+
+    fn parse_legacy_codex_auth_store(
+        content: &str,
+    ) -> Result<Option<CodexOAuthStore>, CodexOAuthError> {
+        let legacy: LegacyCodexAuthFile = serde_json::from_str(content)
+            .map_err(|e| CodexOAuthError::ParseError(e.to_string()))?;
+
+        if legacy.auth_mode.as_deref() != Some("chatgpt") {
+            return Ok(None);
+        }
+
+        let Some(tokens) = legacy.tokens else {
+            return Ok(None);
+        };
+
+        let Some(refresh_token) = tokens
+            .refresh_token
+            .as_deref()
+            .map(str::trim)
+            .filter(|token| !token.is_empty())
+        else {
+            return Ok(None);
+        };
+
+        let oauth_tokens = OAuthTokenResponse {
+            access_token: tokens.access_token.unwrap_or_default(),
+            refresh_token: Some(refresh_token.to_string()),
+            id_token: tokens.id_token,
+            expires_in: None,
+        };
+        let (derived_account_id, email) = extract_identity_from_tokens(&oauth_tokens);
+        let Some(account_id) = tokens
+            .account_id
+            .or(derived_account_id)
+            .map(|id| id.trim().to_string())
+            .filter(|id| !id.is_empty())
+        else {
+            return Ok(None);
+        };
+
+        let authenticated_at = chrono::Utc::now().timestamp();
+        let account = CodexAccountData {
+            account_id: account_id.clone(),
+            email,
+            refresh_token: refresh_token.to_string(),
+            authenticated_at,
+        };
+
+        let mut accounts = HashMap::new();
+        accounts.insert(account_id.clone(), account);
+
+        Ok(Some(CodexOAuthStore {
+            version: 1,
+            accounts,
+            default_account_id: Some(account_id),
+        }))
+    }
+
     async fn save_to_disk(&self) -> Result<(), CodexOAuthError> {
         let accounts = self.accounts.read().await.clone();
         let default = self.resolve_default_account_id().await;
@@ -1067,6 +1210,45 @@ mod tests {
                 .as_deref(),
             Some("org-456")
         );
+    }
+
+    #[test]
+    fn test_parse_legacy_codex_auth_store_imports_chatgpt_refresh_token() {
+        let header = URL_SAFE_NO_PAD.encode(b"{\"alg\":\"none\"}");
+        let payload = URL_SAFE_NO_PAD.encode(
+            b"{\"chatgpt_account_id\":\"acc-123\",\"email\":\"test@example.com\"}",
+        );
+        let jwt = format!("{header}.{payload}.");
+        let legacy = serde_json::json!({
+            "auth_mode": "chatgpt",
+            "tokens": {
+                "id_token": jwt,
+                "access_token": "access-token",
+                "refresh_token": "refresh-token"
+            }
+        })
+        .to_string();
+
+        let store = CodexOAuthManager::parse_legacy_codex_auth_store(&legacy)
+            .expect("legacy auth parsing should succeed")
+            .expect("legacy chatgpt auth should import");
+
+        assert_eq!(store.default_account_id.as_deref(), Some("acc-123"));
+        let account = store.accounts.get("acc-123").expect("account should exist");
+        assert_eq!(account.email.as_deref(), Some("test@example.com"));
+        assert_eq!(account.refresh_token, "refresh-token");
+    }
+
+    #[test]
+    fn test_parse_legacy_codex_auth_store_ignores_proxy_managed_auth() {
+        let legacy = serde_json::json!({
+            "OPENAI_API_KEY": "PROXY_MANAGED"
+        })
+        .to_string();
+
+        let store = CodexOAuthManager::parse_legacy_codex_auth_store(&legacy)
+            .expect("legacy auth parsing should succeed");
+        assert!(store.is_none());
     }
 
     #[tokio::test]
