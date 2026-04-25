@@ -31,6 +31,24 @@ const createDefaultProviders = (): ProvidersByApp => ({
       createdAt: Date.now() + 1,
     },
   },
+  vipercode: {
+    "claude-1": {
+      id: "claude-1",
+      name: "Vipercode Default",
+      settingsConfig: {},
+      category: "official",
+      sortIndex: 0,
+      createdAt: Date.now(),
+    },
+    "claude-2": {
+      id: "claude-2",
+      name: "Vipercode Custom",
+      settingsConfig: {},
+      category: "custom",
+      sortIndex: 1,
+      createdAt: Date.now() + 1,
+    },
+  },
   codex: {
     "codex-1": {
       id: "codex-1",
@@ -70,6 +88,7 @@ const createDefaultProviders = (): ProvidersByApp => ({
 
 const createDefaultCurrent = (): CurrentProviderState => ({
   claude: "claude-1",
+  vipercode: "claude-1",
   codex: "codex-1",
   gemini: "gemini-1",
   opencode: "",
@@ -160,6 +179,24 @@ let mcpConfigs: McpConfigState = {
       },
     },
   },
+  vipercode: {
+    sample: {
+      id: "sample",
+      name: "Sample Vipercode Server",
+      enabled: true,
+      apps: {
+        claude: true,
+        codex: false,
+        gemini: false,
+        opencode: false,
+        openclaw: false,
+      },
+      server: {
+        type: "stdio",
+        command: "claude-server",
+      },
+    },
+  },
   codex: {
     httpServer: {
       id: "httpServer",
@@ -209,6 +246,24 @@ export const resetProviderState = () => {
       sample: {
         id: "sample",
         name: "Sample Claude Server",
+        enabled: true,
+        apps: {
+          claude: true,
+          codex: false,
+          gemini: false,
+          opencode: false,
+          openclaw: false,
+        },
+        server: {
+          type: "stdio",
+          command: "claude-server",
+        },
+      },
+    },
+    vipercode: {
+      sample: {
+        id: "sample",
+        name: "Sample Vipercode Server",
         enabled: true,
         apps: {
           claude: true,
