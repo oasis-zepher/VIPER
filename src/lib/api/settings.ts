@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Settings, WebDavSyncSettings, RemoteSnapshotInfo } from "@/types";
 import type { AppId } from "./types";
+import { normalizeAppId } from "@/lib/appCompat";
 
 export interface ConfigTransferResult {
   success: boolean;
@@ -40,11 +41,11 @@ export const settingsApi = {
   },
 
   async getConfigDir(appId: AppId): Promise<string> {
-    return await invoke("get_config_dir", { app: appId });
+    return await invoke("get_config_dir", { app: normalizeAppId(appId) });
   },
 
   async openConfigFolder(appId: AppId): Promise<void> {
-    await invoke("open_config_folder", { app: appId });
+    await invoke("open_config_folder", { app: normalizeAppId(appId) });
   },
 
   async pickDirectory(defaultPath?: string): Promise<string | null> {

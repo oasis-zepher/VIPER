@@ -12,6 +12,7 @@ import type {
   ProxyTakeoverStatus,
 } from "@/types/proxy";
 import { extractErrorMessage } from "@/utils/errorUtils";
+import { getAppDisplayName, normalizeAppId } from "@/lib/appCompat";
 
 /**
  * 代理服务状态管理
@@ -96,16 +97,12 @@ export function useProxyStatus() {
   // 按应用开启/关闭接管
   const setTakeoverForAppMutation = useMutation({
     mutationFn: ({ appType, enabled }: { appType: string; enabled: boolean }) =>
-      invoke("set_proxy_takeover_for_app", { appType, enabled }),
+      invoke("set_proxy_takeover_for_app", {
+        appType: normalizeAppId(appType as any),
+        enabled,
+      }),
     onSuccess: (_data, variables) => {
-      const appLabel =
-        variables.appType === "claude"
-          ? "Claude"
-          : variables.appType === "codex"
-            ? "Codex"
-            : variables.appType === "gemini"
-              ? "Gemini"
-              : "OpenCode";
+      const appLabel = getAppDisplayName(variables.appType);
 
       toast.success(
         variables.enabled
@@ -143,7 +140,11 @@ export function useProxyStatus() {
     }: {
       appType: string;
       providerId: string;
-    }) => invoke("switch_proxy_provider", { appType, providerId }),
+    }) =>
+      invoke("switch_proxy_provider", {
+        appType: normalizeAppId(appType as any),
+        providerId,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["proxyStatus"] });
     },

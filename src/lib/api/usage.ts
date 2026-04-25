@@ -15,11 +15,15 @@ import type {
 import type { UsageResult } from "@/types";
 import type { AppId } from "./types";
 import type { TemplateType } from "@/config/constants";
+import { normalizeAppId } from "@/lib/appCompat";
 
 export const usageApi = {
   // Provider usage script methods
   query: async (providerId: string, appId: AppId): Promise<UsageResult> => {
-    return invoke("queryProviderUsage", { providerId, app: appId });
+    return invoke("queryProviderUsage", {
+      providerId,
+      app: normalizeAppId(appId),
+    });
   },
 
   testScript: async (
@@ -35,7 +39,7 @@ export const usageApi = {
   ): Promise<UsageResult> => {
     return invoke("testUsageScript", {
       providerId,
-      app: appId,
+      app: normalizeAppId(appId),
       scriptCode,
       timeout,
       apiKey,

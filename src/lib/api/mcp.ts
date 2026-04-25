@@ -7,6 +7,7 @@ import type {
   McpStatus,
 } from "@/types";
 import type { AppId } from "./types";
+import { normalizeAppId } from "@/lib/appCompat";
 
 export const mcpApi = {
   async getStatus(): Promise<McpStatus> {
@@ -36,7 +37,7 @@ export const mcpApi = {
    * @deprecated 使用 getAllServers() 代替（v3.7.0+）
    */
   async getConfig(app: AppId = "claude"): Promise<McpConfigResponse> {
-    return await invoke("get_mcp_config", { app });
+    return await invoke("get_mcp_config", { app: normalizeAppId(app) });
   },
 
   /**
@@ -49,7 +50,7 @@ export const mcpApi = {
     options?: { syncOtherSide?: boolean },
   ): Promise<boolean> {
     const payload = {
-      app,
+      app: normalizeAppId(app),
       id,
       spec,
       ...(options?.syncOtherSide !== undefined
@@ -68,7 +69,7 @@ export const mcpApi = {
     options?: { syncOtherSide?: boolean },
   ): Promise<boolean> {
     const payload = {
-      app,
+      app: normalizeAppId(app),
       id,
       ...(options?.syncOtherSide !== undefined
         ? { syncOtherSide: options.syncOtherSide }
@@ -81,7 +82,11 @@ export const mcpApi = {
    * @deprecated 使用 toggleApp() 代替（v3.7.0+）
    */
   async setEnabled(app: AppId, id: string, enabled: boolean): Promise<boolean> {
-    return await invoke("set_mcp_enabled", { app, id, enabled });
+    return await invoke("set_mcp_enabled", {
+      app: normalizeAppId(app),
+      id,
+      enabled,
+    });
   },
 
   // ========================================================================
@@ -117,7 +122,11 @@ export const mcpApi = {
     app: AppId,
     enabled: boolean,
   ): Promise<void> {
-    return await invoke("toggle_mcp_app", { serverId, app, enabled });
+    return await invoke("toggle_mcp_app", {
+      serverId,
+      app: normalizeAppId(app),
+      enabled,
+    });
   },
 
   /**

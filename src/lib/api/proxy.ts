@@ -7,6 +7,7 @@ import type {
   GlobalProxyConfig,
   AppProxyConfig,
 } from "@/types/proxy";
+import { normalizeAppId } from "@/lib/appCompat";
 
 export const proxyApi = {
   // ========== 代理服务器控制 API ==========
@@ -41,7 +42,10 @@ export const proxyApi = {
     appType: string,
     providerId: string,
   ): Promise<void> {
-    return invoke("switch_proxy_provider", { appType, providerId });
+    return invoke("switch_proxy_provider", {
+      appType: normalizeAppId(appType as any),
+      providerId,
+    });
   },
 
   // ========== 接管状态 API ==========
@@ -56,7 +60,10 @@ export const proxyApi = {
     appType: string,
     enabled: boolean,
   ): Promise<void> {
-    return invoke("set_proxy_takeover_for_app", { appType, enabled });
+    return invoke("set_proxy_takeover_for_app", {
+      appType: normalizeAppId(appType as any),
+      enabled,
+    });
   },
 
   // ========== Legacy 代理配置 API (兼容) ==========
@@ -85,19 +92,28 @@ export const proxyApi = {
 
   // 获取指定应用的代理配置
   async getProxyConfigForApp(appType: string): Promise<AppProxyConfig> {
-    return invoke("get_proxy_config_for_app", { appType });
+    return invoke("get_proxy_config_for_app", {
+      appType: normalizeAppId(appType as any),
+    });
   },
 
   // 更新指定应用的代理配置
   async updateProxyConfigForApp(config: AppProxyConfig): Promise<void> {
-    return invoke("update_proxy_config_for_app", { config });
+    return invoke("update_proxy_config_for_app", {
+      config: {
+        ...config,
+        appType: normalizeAppId(config.appType as any),
+      },
+    });
   },
 
   // ========== 计费默认配置 API ==========
 
   // 获取默认成本倍率
   async getDefaultCostMultiplier(appType: string): Promise<string> {
-    return invoke("get_default_cost_multiplier", { appType });
+    return invoke("get_default_cost_multiplier", {
+      appType: normalizeAppId(appType as any),
+    });
   },
 
   // 设置默认成本倍率
@@ -105,16 +121,24 @@ export const proxyApi = {
     appType: string,
     value: string,
   ): Promise<void> {
-    return invoke("set_default_cost_multiplier", { appType, value });
+    return invoke("set_default_cost_multiplier", {
+      appType: normalizeAppId(appType as any),
+      value,
+    });
   },
 
   // 获取计费模式来源
   async getPricingModelSource(appType: string): Promise<string> {
-    return invoke("get_pricing_model_source", { appType });
+    return invoke("get_pricing_model_source", {
+      appType: normalizeAppId(appType as any),
+    });
   },
 
   // 设置计费模式来源
   async setPricingModelSource(appType: string, value: string): Promise<void> {
-    return invoke("set_pricing_model_source", { appType, value });
+    return invoke("set_pricing_model_source", {
+      appType: normalizeAppId(appType as any),
+      value,
+    });
   },
 };

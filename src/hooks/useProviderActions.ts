@@ -18,6 +18,7 @@ import {
 } from "@/lib/query";
 import { extractErrorMessage } from "@/utils/errorUtils";
 import { openclawKeys } from "@/hooks/useOpenClaw";
+import { isClaudeCompatibleApp } from "@/lib/appCompat";
 
 /**
  * Hook for managing provider actions (add, update, delete, switch)
@@ -39,7 +40,7 @@ export function useProviderActions(
   // Claude 插件同步逻辑
   const syncClaudePlugin = useCallback(
     async (provider: Provider) => {
-      if (activeApp !== "claude") return;
+      if (!isClaudeCompatibleApp(activeApp)) return;
 
       try {
         const settings = await settingsApi.get();
@@ -145,7 +146,7 @@ export function useProviderActions(
   const switchProvider = useCallback(
     async (provider: Provider) => {
       const isCopilotProvider =
-        activeApp === "claude" &&
+        isClaudeCompatibleApp(activeApp) &&
         provider.meta?.providerType === "github_copilot";
 
       // Determine why this provider requires the proxy
@@ -157,21 +158,21 @@ export function useProviderActions(
           });
         } else if (
           provider.meta?.apiFormat === "openai_chat" &&
-          activeApp === "claude"
+          isClaudeCompatibleApp(activeApp)
         ) {
           proxyRequiredReason = t("notifications.proxyReasonOpenAIChat", {
             defaultValue: "使用 OpenAI Chat 接口格式",
           });
         } else if (
           provider.meta?.apiFormat === "openai_responses" &&
-          activeApp === "claude"
+          isClaudeCompatibleApp(activeApp)
         ) {
           proxyRequiredReason = t("notifications.proxyReasonOpenAIResponses", {
             defaultValue: "使用 OpenAI Responses 接口格式",
           });
         } else if (
           provider.meta?.isFullUrl &&
-          (activeApp === "claude" || activeApp === "codex")
+          (isClaudeCompatibleApp(activeApp) || activeApp === "codex")
         ) {
           proxyRequiredReason = t("notifications.proxyReasonFullUrl", {
             defaultValue: "开启了完整 URL 连接模式",

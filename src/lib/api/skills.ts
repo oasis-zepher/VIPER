@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 import type { AppId } from "@/lib/api/types";
+import { normalizeAppId } from "@/lib/appCompat";
 
 export type AppType = "claude" | "codex" | "gemini" | "opencode" | "openclaw";
 
@@ -147,7 +148,10 @@ export const skillsApi = {
     skill: DiscoverableSkill,
     currentApp: AppId,
   ): Promise<InstalledSkill> {
-    return await invoke("install_skill_unified", { skill, currentApp });
+    return await invoke("install_skill_unified", {
+      skill,
+      currentApp: normalizeAppId(currentApp),
+    });
   },
 
   /** 卸载 Skill（统一卸载） */
@@ -160,12 +164,19 @@ export const skillsApi = {
     backupId: string,
     currentApp: AppId,
   ): Promise<InstalledSkill> {
-    return await invoke("restore_skill_backup", { backupId, currentApp });
+    return await invoke("restore_skill_backup", {
+      backupId,
+      currentApp: normalizeAppId(currentApp),
+    });
   },
 
   /** 切换 Skill 的应用启用状态 */
   async toggleApp(id: string, app: AppId, enabled: boolean): Promise<boolean> {
-    return await invoke("toggle_skill_app", { id, app, enabled });
+    return await invoke("toggle_skill_app", {
+      id,
+      app: normalizeAppId(app),
+      enabled,
+    });
   },
 
   /** 扫描未管理的 Skills */
@@ -215,18 +226,21 @@ export const skillsApi = {
 
   /** 获取技能列表（兼容旧 API） */
   async getAll(app: AppId = "claude"): Promise<Skill[]> {
-    if (app === "claude") {
+    if (normalizeAppId(app) === "claude") {
       return await invoke("get_skills");
     }
-    return await invoke("get_skills_for_app", { app });
+    return await invoke("get_skills_for_app", { app: normalizeAppId(app) });
   },
 
   /** 安装技能（兼容旧 API） */
   async install(directory: string, app: AppId = "claude"): Promise<boolean> {
-    if (app === "claude") {
+    if (normalizeAppId(app) === "claude") {
       return await invoke("install_skill", { directory });
     }
-    return await invoke("install_skill_for_app", { app, directory });
+    return await invoke("install_skill_for_app", {
+      app: normalizeAppId(app),
+      directory,
+    });
   },
 
   /** 卸载技能（兼容旧 API） */
@@ -234,10 +248,13 @@ export const skillsApi = {
     directory: string,
     app: AppId = "claude",
   ): Promise<SkillUninstallResult> {
-    if (app === "claude") {
+    if (normalizeAppId(app) === "claude") {
       return await invoke("uninstall_skill", { directory });
     }
-    return await invoke("uninstall_skill_for_app", { app, directory });
+    return await invoke("uninstall_skill_for_app", {
+      app: normalizeAppId(app),
+      directory,
+    });
   },
 
   // ========== 仓库管理 ==========
@@ -269,6 +286,9 @@ export const skillsApi = {
     filePath: string,
     currentApp: AppId,
   ): Promise<InstalledSkill[]> {
-    return await invoke("install_skills_from_zip", { filePath, currentApp });
+    return await invoke("install_skills_from_zip", {
+      filePath,
+      currentApp: normalizeAppId(currentApp),
+    });
   },
 };

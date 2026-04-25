@@ -6,6 +6,7 @@ import type {
   UniversalProvidersMap,
 } from "@/types";
 import type { AppId } from "./types";
+import { normalizeAppId } from "@/lib/appCompat";
 
 export interface ProviderSortUpdate {
   id: string;
@@ -27,11 +28,11 @@ export interface OpenTerminalOptions {
 
 export const providersApi = {
   async getAll(appId: AppId): Promise<Record<string, Provider>> {
-    return await invoke("get_providers", { app: appId });
+    return await invoke("get_providers", { app: normalizeAppId(appId) });
   },
 
   async getCurrent(appId: AppId): Promise<string> {
-    return await invoke("get_current_provider", { app: appId });
+    return await invoke("get_current_provider", { app: normalizeAppId(appId) });
   },
 
   async add(
@@ -39,7 +40,11 @@ export const providersApi = {
     appId: AppId,
     addToLive?: boolean,
   ): Promise<boolean> {
-    return await invoke("add_provider", { provider, app: appId, addToLive });
+    return await invoke("add_provider", {
+      provider,
+      app: normalizeAppId(appId),
+      addToLive,
+    });
   },
 
   async update(
@@ -49,13 +54,13 @@ export const providersApi = {
   ): Promise<boolean> {
     return await invoke("update_provider", {
       provider,
-      app: appId,
+      app: normalizeAppId(appId),
       originalId,
     });
   },
 
   async delete(id: string, appId: AppId): Promise<boolean> {
-    return await invoke("delete_provider", { id, app: appId });
+    return await invoke("delete_provider", { id, app: normalizeAppId(appId) });
   },
 
   /**
@@ -63,15 +68,20 @@ export const providersApi = {
    * Does NOT delete from database - provider remains in the list
    */
   async removeFromLiveConfig(id: string, appId: AppId): Promise<boolean> {
-    return await invoke("remove_provider_from_live_config", { id, app: appId });
+    return await invoke("remove_provider_from_live_config", {
+      id,
+      app: normalizeAppId(appId),
+    });
   },
 
   async switch(id: string, appId: AppId): Promise<SwitchResult> {
-    return await invoke("switch_provider", { id, app: appId });
+    return await invoke("switch_provider", { id, app: normalizeAppId(appId) });
   },
 
   async importDefault(appId: AppId): Promise<boolean> {
-    return await invoke("import_default_config", { app: appId });
+    return await invoke("import_default_config", {
+      app: normalizeAppId(appId),
+    });
   },
 
   async updateTrayMenu(): Promise<boolean> {
@@ -82,7 +92,10 @@ export const providersApi = {
     updates: ProviderSortUpdate[],
     appId: AppId,
   ): Promise<boolean> {
-    return await invoke("update_providers_sort_order", { updates, app: appId });
+    return await invoke("update_providers_sort_order", {
+      updates,
+      app: normalizeAppId(appId),
+    });
   },
 
   async onSwitched(
@@ -107,7 +120,7 @@ export const providersApi = {
     const { cwd } = options ?? {};
     return await invoke("open_provider_terminal", {
       providerId,
-      app: appId,
+      app: normalizeAppId(appId),
       cwd,
     });
   },

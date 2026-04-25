@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "CC Switch",
-    "description": "Claude Code・Codex・Gemini CLI のためのオールインワンアシスタント"
+    "description": "Vipercode・Claude Code・Codex・Gemini CLI のためのオールインワンアシスタント"
   },
   "common": {
     "add": "追加",
@@ -44,7 +44,7 @@
   },
   "firstRunNotice": {
     "title": "CC Switch へようこそ",
-    "bodyDefault": "CC Switch は Claude Code / Codex / Gemini CLI の複数プロバイダーをワンクリックで切り替えられるツールです。すでにこれらのツールを設定済みの場合、CC Switch は現在の設定を「default」という名前のプロバイダーとして自動的に保存するので、既存の設定が失われることはありません。",
+    "bodyDefault": "CC Switch は Vipercode / Claude Code / Codex / Gemini CLI の複数プロバイダーをワンクリックで切り替えられるツールです。すでにこれらのツールを設定済みの場合、CC Switch は現在の設定を「default」という名前のプロバイダーとして自動的に保存するので、既存の設定が失われることはありません。",
     "bodyOfficial": "リストには「Official（公式）」プリセットも用意されており、公式バージョンに戻したくなったらクリックするだけで切り替えられます。切り替える前に現在の設定は自動で default にバックアップされるので、自由に行き来できます。これが CC Switch の仕組みです 😊",
     "confirm": "了解しました"
   },
@@ -512,6 +512,7 @@
       "title": "ホームページ表示",
       "description": "ホームページに表示するアプリを選択",
       "claudeDesc": "Anthropic Claude Code CLI",
+      "vipercodeDesc": "Claude 互換の Vipercode CLI",
       "codexDesc": "OpenAI Codex CLI",
       "geminiDesc": "Google Gemini CLI",
       "opencodeDesc": "OpenCode CLI"
@@ -599,7 +600,7 @@
     "viewReleaseNotes": "このバージョンのリリースノートを見る",
     "viewCurrentReleaseNotes": "現在のバージョンのリリースノートを見る",
     "oneClickInstall": "ワンクリックインストール",
-    "oneClickInstallHint": "Claude Code / Codex / Gemini CLI / OpenCode をインストール",
+    "oneClickInstallHint": "Vipercode / Claude Code / Codex / Gemini CLI / OpenCode をインストール",
     "localEnvCheck": "ローカル環境チェック",
     "envBadge": {
       "wsl": "WSL",
@@ -652,6 +653,7 @@
   },
   "apps": {
     "claude": "Claude",
+    "vipercode": "Vipercode",
     "codex": "Codex",
     "gemini": "Gemini",
     "opencode": "OpenCode",
@@ -659,7 +661,7 @@
   },
   "sessionManager": {
     "title": "セッション管理",
-    "subtitle": "Claude Code / Codex / OpenCode / OpenClaw / Gemini CLI のセッションを管理",
+    "subtitle": "Vipercode / Claude Code / Codex / OpenCode / OpenClaw / Gemini CLI のセッションを管理",
     "searchPlaceholder": "内容・ディレクトリ・ID で検索",
     "searchSessions": "セッションを検索",
     "providerFilterAll": "すべて",

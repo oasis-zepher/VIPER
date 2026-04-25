@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { CustomEndpoint } from "@/types";
 import type { AppId } from "./types";
+import { normalizeAppId } from "@/lib/appCompat";
 
 export interface EndpointLatencyResult {
   url: string;
@@ -11,7 +12,9 @@ export interface EndpointLatencyResult {
 
 export const vscodeApi = {
   async getLiveProviderSettings(appId: AppId) {
-    return await invoke("read_live_provider_settings", { app: appId });
+    return await invoke("read_live_provider_settings", {
+      app: normalizeAppId(appId),
+    });
   },
 
   async testApiEndpoints(
@@ -29,7 +32,7 @@ export const vscodeApi = {
     providerId: string,
   ): Promise<CustomEndpoint[]> {
     return await invoke("get_custom_endpoints", {
-      app: appId,
+      app: normalizeAppId(appId),
       providerId: providerId,
     });
   },
@@ -40,7 +43,7 @@ export const vscodeApi = {
     url: string,
   ): Promise<void> {
     await invoke("add_custom_endpoint", {
-      app: appId,
+      app: normalizeAppId(appId),
       providerId: providerId,
       url,
     });
@@ -52,7 +55,7 @@ export const vscodeApi = {
     url: string,
   ): Promise<void> {
     await invoke("remove_custom_endpoint", {
-      app: appId,
+      app: normalizeAppId(appId),
       providerId: providerId,
       url,
     });
@@ -64,7 +67,7 @@ export const vscodeApi = {
     url: string,
   ): Promise<void> {
     await invoke("update_endpoint_last_used", {
-      app: appId,
+      app: normalizeAppId(appId),
       providerId: providerId,
       url,
     });

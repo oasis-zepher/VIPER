@@ -1,5 +1,6 @@
 import React from "react";
 import type { AppId } from "@/lib/api/types";
+import type { BackendAppId } from "@/lib/appCompat";
 import {
   ClaudeIcon,
   CodexIcon,
@@ -15,7 +16,7 @@ export interface AppConfig {
   badgeClass: string;
 }
 
-export const APP_IDS: AppId[] = [
+export const APP_IDS: BackendAppId[] = [
   "claude",
   "codex",
   "gemini",
@@ -24,7 +25,7 @@ export const APP_IDS: AppId[] = [
 ];
 
 /** App IDs shown in MCP & Skills panels (excludes OpenClaw) */
-export const MCP_SKILLS_APP_IDS: AppId[] = [
+export const MCP_SKILLS_APP_IDS: BackendAppId[] = [
   "claude",
   "codex",
   "gemini",
@@ -39,6 +40,14 @@ export const APP_ICON_MAP: Record<AppId, AppConfig> = {
       "bg-orange-500/10 ring-1 ring-orange-500/20 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400",
     badgeClass:
       "bg-orange-500/10 text-orange-700 dark:text-orange-300 hover:bg-orange-500/20 border-0 gap-1.5",
+  },
+  vipercode: {
+    label: "Vipercode",
+    icon: <ClaudeIcon size={14} />,
+    activeClass:
+      "bg-slate-500/10 ring-1 ring-slate-500/20 hover:bg-slate-500/20 text-slate-700 dark:text-slate-300",
+    badgeClass:
+      "bg-slate-500/10 text-slate-700 dark:text-slate-300 hover:bg-slate-500/20 border-0 gap-1.5",
   },
   codex: {
     label: "Codex",

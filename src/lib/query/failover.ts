@@ -3,6 +3,7 @@ import { failoverApi } from "@/lib/api/failover";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { extractErrorMessage } from "@/utils/errorUtils";
+import { getAppDisplayName } from "@/lib/appCompat";
 
 // ========== 熔断器 Hooks ==========
 
@@ -222,12 +223,7 @@ export function useSetAutoFailoverEnabled() {
     },
 
     onSuccess: (_data, variables) => {
-      const appLabel =
-        variables.appType === "claude"
-          ? "Claude"
-          : variables.appType === "codex"
-            ? "Codex"
-            : "Gemini";
+      const appLabel = getAppDisplayName(variables.appType);
 
       toast.success(
         variables.enabled

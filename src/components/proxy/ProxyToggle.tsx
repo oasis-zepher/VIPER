@@ -11,6 +11,7 @@ import { useProxyStatus } from "@/hooks/useProxyStatus";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import type { AppId } from "@/lib/api";
+import { getAppDisplayName, normalizeAppId } from "@/lib/appCompat";
 
 interface ProxyToggleProps {
   className?: string;
@@ -30,16 +31,8 @@ export function ProxyToggle({ className, activeApp }: ProxyToggleProps) {
     }
   };
 
-  const takeoverEnabled = takeoverStatus?.[activeApp] || false;
-
-  const appLabel =
-    activeApp === "claude"
-      ? "Claude"
-      : activeApp === "codex"
-        ? "Codex"
-        : activeApp === "gemini"
-          ? "Gemini"
-          : "OpenCode";
+  const takeoverEnabled = takeoverStatus?.[normalizeAppId(activeApp)] || false;
+  const appLabel = getAppDisplayName(activeApp);
 
   const tooltipText = takeoverEnabled
     ? isRunning

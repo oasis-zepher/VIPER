@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { EnvConflict, BackupInfo } from "@/types/env";
+import { normalizeAppId } from "@/lib/appCompat";
 
 /**
  * 环境变量管理 API
@@ -13,7 +14,9 @@ import type { EnvConflict, BackupInfo } from "@/types/env";
 export async function checkEnvConflicts(
   appType: string,
 ): Promise<EnvConflict[]> {
-  return invoke<EnvConflict[]>("check_env_conflicts", { app: appType });
+  return invoke<EnvConflict[]>("check_env_conflicts", {
+    app: normalizeAppId(appType as any),
+  });
 }
 
 /**

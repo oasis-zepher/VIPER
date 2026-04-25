@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "CC Switch",
-    "description": "Claude Code / Codex / Gemini CLI 全方位辅助工具"
+    "description": "Vipercode / Claude Code / Codex / Gemini CLI 全方位辅助工具"
   },
   "common": {
     "add": "添加",
@@ -44,7 +44,7 @@
   },
   "firstRunNotice": {
     "title": "欢迎使用 CC Switch",
-    "bodyDefault": "CC Switch 可以帮你在 Claude Code / Codex / Gemini CLI 的多个供应商之间一键切换。如果你之前已经配置过这些工具，CC Switch 会自动把现有设置保存为名为 “default” 的供应商，保证你的配置不会丢失。",
+    "bodyDefault": "CC Switch 可以帮你在 Vipercode / Claude Code / Codex / Gemini CLI 的多个供应商之间一键切换。如果你之前已经配置过这些工具，CC Switch 会自动把现有设置保存为名为 “default” 的供应商，保证你的配置不会丢失。",
     "bodyOfficial": "列表里还预置了 “官方（Official）” 供应商，随时点一下即可切回官方默认配置。切换前 CC Switch 会自动把当前配置备份回 default，可以放心来回切。CC Switch 就是这样工作的 😊",
     "confirm": "我知道了"
   },
@@ -512,6 +512,7 @@
       "title": "主页面显示",
       "description": "选择在主页面显示的应用",
       "claudeDesc": "Anthropic Claude Code CLI",
+      "vipercodeDesc": "兼容 Claude 的 Vipercode CLI",
       "codexDesc": "OpenAI Codex CLI",
       "geminiDesc": "Google Gemini CLI",
       "opencodeDesc": "OpenCode CLI"
@@ -599,7 +600,7 @@
     "viewReleaseNotes": "查看该版本更新日志",
     "viewCurrentReleaseNotes": "查看当前版本更新日志",
     "oneClickInstall": "一键安装",
-    "oneClickInstallHint": "安装 Claude Code / Codex / Gemini CLI / OpenCode",
+    "oneClickInstallHint": "安装 Vipercode / Claude Code / Codex / Gemini CLI / OpenCode",
     "localEnvCheck": "本地环境检查",
     "envBadge": {
       "wsl": "WSL",
@@ -652,6 +653,7 @@
   },
   "apps": {
     "claude": "Claude",
+    "vipercode": "Vipercode",
     "codex": "Codex",
     "gemini": "Gemini",
     "opencode": "OpenCode",
@@ -659,7 +661,7 @@
   },
   "sessionManager": {
     "title": "会话管理",
-    "subtitle": "管理 Claude Code、Codex、OpenCode、OpenClaw 与 Gemini CLI 会话记录",
+    "subtitle": "管理 Vipercode、Claude Code、Codex、OpenCode、OpenClaw 与 Gemini CLI 会话记录",
     "searchPlaceholder": "搜索会话内容、目录或 ID",
     "searchSessions": "搜索会话",
     "providerFilterAll": "全部",

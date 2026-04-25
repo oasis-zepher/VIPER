@@ -5,6 +5,7 @@ import type {
   CircuitBreakerStats,
   FailoverQueueItem,
 } from "@/types/proxy";
+import { normalizeAppId } from "@/lib/appCompat";
 
 export interface Provider {
   id: string;
@@ -28,7 +29,10 @@ export const failoverApi = {
     providerId: string,
     appType: string,
   ): Promise<ProviderHealth> {
-    return invoke("get_provider_health", { providerId, appType });
+    return invoke("get_provider_health", {
+      providerId,
+      appType: normalizeAppId(appType as any),
+    });
   },
 
   // 重置熔断器
@@ -36,7 +40,10 @@ export const failoverApi = {
     providerId: string,
     appType: string,
   ): Promise<void> {
-    return invoke("reset_circuit_breaker", { providerId, appType });
+    return invoke("reset_circuit_breaker", {
+      providerId,
+      appType: normalizeAppId(appType as any),
+    });
   },
 
   // 获取熔断器配置
@@ -56,24 +63,34 @@ export const failoverApi = {
     providerId: string,
     appType: string,
   ): Promise<CircuitBreakerStats | null> {
-    return invoke("get_circuit_breaker_stats", { providerId, appType });
+    return invoke("get_circuit_breaker_stats", {
+      providerId,
+      appType: normalizeAppId(appType as any),
+    });
   },
 
   // ========== 故障转移队列 API（新） ==========
 
   // 获取故障转移队列
   async getFailoverQueue(appType: string): Promise<FailoverQueueItem[]> {
-    return invoke("get_failover_queue", { appType });
+    return invoke("get_failover_queue", {
+      appType: normalizeAppId(appType as any),
+    });
   },
 
   // 获取可添加到队列的供应商（不在队列中的）
   async getAvailableProvidersForFailover(appType: string): Promise<Provider[]> {
-    return invoke("get_available_providers_for_failover", { appType });
+    return invoke("get_available_providers_for_failover", {
+      appType: normalizeAppId(appType as any),
+    });
   },
 
   // 添加供应商到故障转移队列
   async addToFailoverQueue(appType: string, providerId: string): Promise<void> {
-    return invoke("add_to_failover_queue", { appType, providerId });
+    return invoke("add_to_failover_queue", {
+      appType: normalizeAppId(appType as any),
+      providerId,
+    });
   },
 
   // 从故障转移队列移除供应商
@@ -81,12 +98,17 @@ export const failoverApi = {
     appType: string,
     providerId: string,
   ): Promise<void> {
-    return invoke("remove_from_failover_queue", { appType, providerId });
+    return invoke("remove_from_failover_queue", {
+      appType: normalizeAppId(appType as any),
+      providerId,
+    });
   },
 
   // 获取指定应用的自动故障转移开关状态
   async getAutoFailoverEnabled(appType: string): Promise<boolean> {
-    return invoke("get_auto_failover_enabled", { appType });
+    return invoke("get_auto_failover_enabled", {
+      appType: normalizeAppId(appType as any),
+    });
   },
 
   // 设置指定应用的自动故障转移开关状态
@@ -94,6 +116,9 @@ export const failoverApi = {
     appType: string,
     enabled: boolean,
   ): Promise<void> {
-    return invoke("set_auto_failover_enabled", { appType, enabled });
+    return invoke("set_auto_failover_enabled", {
+      appType: normalizeAppId(appType as any),
+      enabled,
+    });
   },
 };
