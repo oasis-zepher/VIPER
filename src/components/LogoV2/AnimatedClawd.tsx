@@ -11,8 +11,8 @@ function hold(pose: ClawdPose, offset: number, frames: number): Frame[] {
   return Array.from({ length: frames }, () => ({ pose, offset }))
 }
 
-// Offset semantics: marginTop in a fixed-height-4 container. 0 = normal,
-// 1 = crouched. Container height stays 4 so the layout never shifts; during
+// Offset semantics: marginTop in a fixed-height container. 0 = normal,
+// 1 = crouched. Container height stays fixed so the layout never shifts; during
 // a crouch (offset=1) Clawd's feet row dips below the container and gets
 // clipped — reads as "ducking below the frame" before springing back up.
 
@@ -38,7 +38,7 @@ const CLICK_ANIMATIONS: readonly (readonly Frame[])[] = [JUMP_WAVE, LOOK_AROUND]
 const IDLE: Frame = { pose: 'default', offset: 0 }
 const FRAME_MS = 60
 const incrementFrame = (i: number) => i + 1
-const CLAWD_HEIGHT = 4
+const CLAWD_HEIGHT = 7
 
 /**
  * Clawd with click-triggered animations (crouch-jump with arms up, or

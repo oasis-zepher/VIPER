@@ -14,27 +14,34 @@ type Props = {
 }
 
 type PenguinPalette = {
-  outline: keyof Theme
+  body: keyof Theme
   faceBackground: keyof Theme
-  eye: keyof Theme
-  bellyBackground: keyof Theme
+  faceDetail: keyof Theme
   beak: keyof Theme
+  feet: keyof Theme
 }
 
 const LIGHT_THEMES = ['light', 'light-daltonized', 'light-ansi']
 
 const TOP_ROWS: Record<ClawdPose, string> = {
-  default: ' ▗▄▄▄▄▄▖ ',
-  'look-left': ' ▗▄▄▄▄▄▖ ',
-  'look-right': ' ▗▄▄▄▄▄▖ ',
-  'arms-up': '╲▗▄▄▄▄▄▖╱',
+  default: '  ▗▄▄▄▖  ',
+  'look-left': '  ▗▄▄▄▖  ',
+  'look-right': '  ▗▄▄▄▖  ',
+  'arms-up': '╲ ▗▄▄▄▖ ╱',
 }
 
 const EYES: Record<ClawdPose, string> = {
-  default: ' ◉ ◉ ',
-  'look-left': '◉◉   ',
-  'look-right': '   ◉◉',
-  'arms-up': ' ◉ ◉ ',
+  default: ' • • ',
+  'look-left': '••   ',
+  'look-right': '   ••',
+  'arms-up': ' • • ',
+}
+
+const BEAK: Record<ClawdPose, string> = {
+  default: '  ▬  ',
+  'look-left': ' ▬   ',
+  'look-right': '   ▬ ',
+  'arms-up': '  ▬  ',
 }
 
 export function Clawd({ pose = 'default' }: Props = {}): React.ReactNode {
@@ -60,25 +67,39 @@ function PenguinArt({
   return (
     <Box flexDirection="column" alignItems="center">
       <Text>
-        <Text color={palette.outline}>{TOP_ROWS[pose]}</Text>
+        <Text color={palette.body}>{TOP_ROWS[pose]}</Text>
       </Text>
       <Text>
-        <Text color={palette.outline}>{'▐ '}</Text>
-        <Text color={palette.eye} backgroundColor={palette.faceBackground}>
+        <Text color={palette.body}>{' ▟█████▙ '}</Text>
+      </Text>
+      <Text>
+        <Text color={palette.body}>{'▟█'}</Text>
+        <Text color={palette.faceBackground}>{'▗▄▄▄▖'}</Text>
+        <Text color={palette.body}>{'█▙'}</Text>
+      </Text>
+      <Text>
+        <Text color={palette.body}>{'██'}</Text>
+        <Text
+          color={palette.faceDetail}
+          backgroundColor={palette.faceBackground}
+        >
           {EYES[pose]}
         </Text>
-        <Text color={palette.outline}>{' ▌'}</Text>
+        <Text color={palette.body}>{'██'}</Text>
       </Text>
       <Text>
-        <Text color={palette.outline}>{'▐ '}</Text>
-        <Text color={palette.beak} backgroundColor={palette.bellyBackground}>
-          {'  ▾  '}
+        <Text color={palette.body}>{'██'}</Text>
+        <Text color={palette.beak} backgroundColor={palette.faceBackground}>
+          {BEAK[pose]}
         </Text>
-        <Text color={palette.outline}>{' ▌'}</Text>
+        <Text color={palette.body}>{'██'}</Text>
       </Text>
-      <Text color={palette.beak}>
-        {'  ▝▘ ▝▝  '}
+      <Text>
+        <Text color={palette.body}>{' ▜█'}</Text>
+        <Text color={palette.faceBackground}>{'▝▄▄▄▘'}</Text>
+        <Text color={palette.body}>{'█▛ '}</Text>
       </Text>
+      <Text color={palette.feet}>{'  ▔▔ ▔▔  '}</Text>
     </Box>
   )
 }
@@ -96,10 +117,10 @@ function AppleTerminalClawd({
 function getPenguinPalette(theme: string): PenguinPalette {
   const isLightTheme = LIGHT_THEMES.includes(theme)
   return {
-    outline: 'text',
-    faceBackground: isLightTheme ? 'text' : 'clawd_background',
-    eye: isLightTheme ? 'inverseText' : 'text',
-    bellyBackground: isLightTheme ? 'inverseText' : 'text',
+    body: isLightTheme ? 'inactive' : 'inactiveShimmer',
+    faceBackground: 'clawd_background',
+    faceDetail: isLightTheme ? 'inverseText' : 'text',
     beak: 'warning',
+    feet: 'warning',
   }
 }

@@ -7,11 +7,80 @@ const WELCOME_V2_WIDTH = 58
 const LIGHT_THEMES = ['light', 'light-daltonized', 'light-ansi']
 
 type PenguinPalette = {
-  outline: keyof Theme
+  body: keyof Theme
   faceBackground: keyof Theme
-  eye: keyof Theme
-  bellyBackground: keyof Theme
+  faceDetail: keyof Theme
   beak: keyof Theme
+  feet: keyof Theme
+}
+
+type PenguinWelcomeIconProps = {
+  palette: PenguinPalette
+  tails?: React.ReactNode[]
+  groundPrefix?: string
+  groundTail?: React.ReactNode
+}
+
+function PenguinWelcomeIcon({
+  palette,
+  tails = [],
+  groundPrefix = '      ',
+  groundTail = null,
+}: PenguinWelcomeIconProps): React.ReactNode {
+  return (
+    <>
+      <Text>
+        {'      '}
+        <Text color={palette.body}>{'  ▗▄▄▄▖  '}</Text>
+        {tails[0]}
+      </Text>
+      <Text>
+        {'      '}
+        <Text color={palette.body}>{' ▟█████▙ '}</Text>
+        {tails[1]}
+      </Text>
+      <Text>
+        {'      '}
+        <Text color={palette.body}>{'▟█'}</Text>
+        <Text color={palette.faceBackground}>{'▗▄▄▄▖'}</Text>
+        <Text color={palette.body}>{'█▙'}</Text>
+        {tails[2]}
+      </Text>
+      <Text>
+        {'      '}
+        <Text color={palette.body}>{'██'}</Text>
+        <Text
+          color={palette.faceDetail}
+          backgroundColor={palette.faceBackground}
+        >
+          {' • • '}
+        </Text>
+        <Text color={palette.body}>{'██'}</Text>
+        {tails[3]}
+      </Text>
+      <Text>
+        {'      '}
+        <Text color={palette.body}>{'██'}</Text>
+        <Text color={palette.beak} backgroundColor={palette.faceBackground}>
+          {'  ▬  '}
+        </Text>
+        <Text color={palette.body}>{'██'}</Text>
+        {tails[4]}
+      </Text>
+      <Text>
+        {'      '}
+        <Text color={palette.body}>{' ▜█'}</Text>
+        <Text color={palette.faceBackground}>{'▝▄▄▄▘'}</Text>
+        <Text color={palette.body}>{'█▛ '}</Text>
+        {tails[5]}
+      </Text>
+      <Text>
+        {groundPrefix}
+        <Text color={palette.feet}>{'  ▔▔ ▔▔  '}</Text>
+        {groundTail}
+      </Text>
+    </>
+  )
 }
 
 export function WelcomeV2(): React.ReactNode {
@@ -72,40 +141,17 @@ export function WelcomeV2(): React.ReactNode {
           <Text>
             {'                                            ▒▒      ██   ▒'}
           </Text>
-          <Text>
-            {'      '}
-            <Text color={palette.outline}>{' ▗▄▄▄▄▄▖ '}</Text>
-            {'                         ▒▒░░▒▒      ▒ ▒▒'}
-          </Text>
-          <Text>
-            {'      '}
-            <Text color={palette.outline}>{'▐ '}</Text>
-            <Text
-              color={palette.eye}
-              backgroundColor={palette.faceBackground}
-            >
-              {' ◉ ◉ '}
-            </Text>
-            <Text color={palette.outline}>{' ▌'}</Text>
-            {'                           ▒▒         ▒▒ '}
-          </Text>
-          <Text>
-            {'      '}
-            <Text color={palette.outline}>{'▐ '}</Text>
-            <Text
-              color={palette.beak}
-              backgroundColor={palette.bellyBackground}
-            >
-              {'  ▾  '}
-            </Text>
-            <Text color={palette.outline}>{' ▌'}</Text>
-            {'                          ░          ▒   '}
-          </Text>
-          <Text>
-            {'…………………'}
-            <Text color={palette.beak}>{'  ▝▘ ▝▝  '}</Text>
-            {'……………………………………………………………………░…………………………▒…………'}
-          </Text>
+          <PenguinWelcomeIcon
+            palette={palette}
+            tails={[
+              '                         ▒▒░░▒▒      ▒ ▒▒',
+              '                           ▒▒         ▒▒ ',
+              '                           ▒▒         ▒▒ ',
+              '                          ░          ▒   ',
+            ]}
+            groundPrefix="…………………"
+            groundTail="……………………………………………………………………░…………………………▒…………"
+          />
         </Text>
       </Box>
     )
@@ -153,41 +199,26 @@ export function WelcomeV2(): React.ReactNode {
         <Text dimColor>
           {'                               ░░░░░░░░░░░░░░░░           '}
         </Text>
-        <Text>
-          {'      '}
-          <Text color={palette.outline}>{' ▗▄▄▄▄▄▖ '}</Text>
-          {'                                       '}
-          <Text dimColor>*</Text>
-          <Text> </Text>
-        </Text>
-        <Text>
-          {'      '}
-          <Text color={palette.outline}>{'▐ '}</Text>
-          <Text color={palette.eye} backgroundColor={palette.faceBackground}>
-            {' ◉ ◉ '}
-          </Text>
-          <Text color={palette.outline}>{' ▌'}</Text>
-          <Text>{'                        '}</Text>
-          <Text bold>*</Text>
-          <Text>{'                '}</Text>
-        </Text>
-        <Text>
-          {'      '}
-          <Text color={palette.outline}>{'▐ '}</Text>
-          <Text
-            color={palette.beak}
-            backgroundColor={palette.bellyBackground}
-          >
-            {'  ▾  '}
-          </Text>
-          <Text color={palette.outline}>{' ▌'}</Text>
-          {'     *                                   '}
-        </Text>
-        <Text>
-          {'…………………'}
-          <Text color={palette.beak}>{'  ▝▘ ▝▝  '}</Text>
-          {'………………………………………………………………………………………………………………'}
-        </Text>
+        <PenguinWelcomeIcon
+          palette={palette}
+          tails={[
+            <>
+              {'                                       '}
+              <Text dimColor>*</Text>
+              <Text> </Text>
+            </>,
+            null,
+            null,
+            <>
+              <Text>{'                        '}</Text>
+              <Text bold>*</Text>
+              <Text>{'                '}</Text>
+            </>,
+            '     *                                   ',
+          ]}
+          groundPrefix="…………………"
+          groundTail="………………………………………………………………………………………………………………"
+        />
       </Text>
     </Box>
   )
@@ -252,40 +283,17 @@ function AppleTerminalWelcomeV2({
           <Text>
             {'                                          ▒▒░░▒▒      ▒ ▒▒'}
           </Text>
-          <Text>
-            {'      '}
-            <Text color={palette.outline}>{' ▗▄▄▄▄▄▖ '}</Text>
-            {'                           ▒▒         ▒▒ '}
-          </Text>
-          <Text>
-            {'      '}
-            <Text color={palette.outline}>{'▐ '}</Text>
-            <Text
-              color={palette.eye}
-              backgroundColor={palette.faceBackground}
-            >
-              {' ◉ ◉ '}
-            </Text>
-            <Text color={palette.outline}>{' ▌'}</Text>
-            {'                           ▒▒         ▒▒ '}
-          </Text>
-          <Text>
-            {'      '}
-            <Text color={palette.outline}>{'▐ '}</Text>
-            <Text
-              color={palette.beak}
-              backgroundColor={palette.bellyBackground}
-            >
-              {'  ▾  '}
-            </Text>
-            <Text color={palette.outline}>{' ▌'}</Text>
-            {'                           ░          ▒   '}
-          </Text>
-          <Text>
-            {'…………………'}
-            <Text color={palette.beak}>{'  ▝▘ ▝▝  '}</Text>
-            {'……………………………………………………………………░…………………………▒…………'}
-          </Text>
+          <PenguinWelcomeIcon
+            palette={palette}
+            tails={[
+              '                           ▒▒         ▒▒ ',
+              '                           ▒▒         ▒▒ ',
+              '                           ▒▒         ▒▒ ',
+              '                           ░          ▒   ',
+            ]}
+            groundPrefix="…………………"
+            groundTail="……………………………………………………………………░…………………………▒…………"
+          />
         </Text>
       </Box>
     )
@@ -333,41 +341,26 @@ function AppleTerminalWelcomeV2({
         <Text dimColor>
           {'                               ░░░░░░░░░░░░░░░░           '}
         </Text>
-        <Text>
-          {'      '}
-          <Text color={palette.outline}>{' ▗▄▄▄▄▄▖ '}</Text>
-          {'                                       '}
-          <Text dimColor>*</Text>
-          <Text> </Text>
-        </Text>
-        <Text>
-          {'      '}
-          <Text color={palette.outline}>{'▐ '}</Text>
-          <Text color={palette.eye} backgroundColor={palette.faceBackground}>
-            {' ◉ ◉ '}
-          </Text>
-          <Text color={palette.outline}>{' ▌'}</Text>
-          <Text>{'                        '}</Text>
-          <Text bold>*</Text>
-          <Text>{'                '}</Text>
-        </Text>
-        <Text>
-          {'      '}
-          <Text color={palette.outline}>{'▐ '}</Text>
-          <Text
-            color={palette.beak}
-            backgroundColor={palette.bellyBackground}
-          >
-            {'  ▾  '}
-          </Text>
-          <Text color={palette.outline}>{' ▌'}</Text>
-          {'      *                                   '}
-        </Text>
-        <Text>
-          {'…………………'}
-          <Text color={palette.beak}>{'  ▝▘ ▝▝  '}</Text>
-          {'………………………………………………………………………………………………………………'}
-        </Text>
+        <PenguinWelcomeIcon
+          palette={palette}
+          tails={[
+            <>
+              {'                                       '}
+              <Text dimColor>*</Text>
+              <Text> </Text>
+            </>,
+            null,
+            null,
+            <>
+              <Text>{'                        '}</Text>
+              <Text bold>*</Text>
+              <Text>{'                '}</Text>
+            </>,
+            '      *                                   ',
+          ]}
+          groundPrefix="…………………"
+          groundTail="………………………………………………………………………………………………………………"
+        />
       </Text>
     </Box>
   )
@@ -376,10 +369,10 @@ function AppleTerminalWelcomeV2({
 function getPenguinPalette(theme: string): PenguinPalette {
   const isLightTheme = LIGHT_THEMES.includes(theme)
   return {
-    outline: 'text',
-    faceBackground: isLightTheme ? 'text' : 'clawd_background',
-    eye: isLightTheme ? 'inverseText' : 'text',
-    bellyBackground: isLightTheme ? 'inverseText' : 'text',
+    body: isLightTheme ? 'inactive' : 'inactiveShimmer',
+    faceBackground: 'clawd_background',
+    faceDetail: isLightTheme ? 'inverseText' : 'text',
     beak: 'warning',
+    feet: 'warning',
   }
 }
