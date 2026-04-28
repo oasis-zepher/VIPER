@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { findToolByName, toolMatchesName } from '../registry.js'
+import { buildTool, findToolByName, toolMatchesName } from '../registry.js'
 import type { CoreTool, Tools } from '../types.js'
 
 describe('toolMatchesName', () => {
@@ -59,5 +59,29 @@ describe('findToolByName', () => {
     const found = findToolByName(dupTools, 'tool')
     expect(found).toBeDefined()
     expect(found!.aliases).toContain('a')
+  })
+})
+
+describe('buildTool', () => {
+  test('fills safe defaults for a minimal core tool definition', async () => {
+    const tool = buildTool({
+      name: 'Minimal',
+      inputSchema: {} as any,
+      maxResultSizeChars: 1000,
+      call: async () => ({ data: 'ok' }),
+      description: async () => 'Minimal tool',
+      prompt: async () => 'Use Minimal',
+      mapToolResultToToolResultBlockParam: content => content,
+    })
+
+    expect(tool.isEnabled()).toBe(true)
+    expect(tool.isConcurrencySafe({})).toBe(false)
+    expect(tool.isReadOnly({})).toBe(false)
+    expect(tool.isDestructive({})).toBe(false)
+    expect(await tool.checkPermissions({}, {})).toEqual({
+      behavior: 'allow',
+      updatedInput: {},
+    })
+    expect(tool.userFacingName(undefined)).toBe('Minimal')
   })
 })

@@ -219,3 +219,20 @@ export type Tool<
  * A collection of tools.
  */
 export type Tools = readonly CoreTool[]
+
+export type DefaultableToolKeys =
+  | 'isEnabled'
+  | 'isConcurrencySafe'
+  | 'isReadOnly'
+  | 'isDestructive'
+  | 'checkPermissions'
+  | 'toAutoClassifierInput'
+  | 'userFacingName'
+
+export type ToolDef<
+  Input extends AnyObject = AnyObject,
+  Output = unknown,
+  P extends ToolProgressData = ToolProgressData,
+  Context = unknown,
+> = Omit<CoreTool<Input, Output, P, Context>, DefaultableToolKeys> &
+  Partial<Pick<CoreTool<Input, Output, P, Context>, DefaultableToolKeys>>

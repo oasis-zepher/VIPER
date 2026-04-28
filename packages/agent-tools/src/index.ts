@@ -13,6 +13,7 @@ export type {
   CoreTool,
   Tool,
   Tools,
+  ToolDef,
 } from './types.js'
 
-export { findToolByName, toolMatchesName } from './registry.js'
+export { buildTool, findToolByName, toolMatchesName } from './registry.js'
