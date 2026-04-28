@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { getLatestChannelContextHint } from '../interactiveHandler.js'
+import { getLatestChannelContextHint } from '../channelContextHint.js'
 
 describe('getLatestChannelContextHint', () => {
   test('extracts source server and chat id from latest channel user message', () => {
