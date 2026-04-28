@@ -55,6 +55,7 @@
     "test": "bun test",
     "check:unused": "knip-bun",
     "health": "bun run scripts/health-check.ts",
+    "pack:audit": "node scripts/package-audit.mjs",
     "postinstall": "node scripts/run-parallel.mjs scripts/postinstall.cjs scripts/setup-chrome-mcp.mjs",
     "docs:dev": "npx mintlify dev",
     "typecheck": "tsc --noEmit",
@@ -65,6 +66,14 @@
     "@agentclientprotocol/sdk": "^0.19.0",
     "@claude-code-best/mcp-chrome-bridge": "^2.0.8",
     "ws": "^8.20.0"
+  },
+  "optionalDependencies": {
+    "@claude-code-best/audio-capture-darwin-arm64": "1.7.1",
+    "@claude-code-best/audio-capture-darwin-x64": "1.7.1",
+    "@claude-code-best/audio-capture-linux-arm64": "1.7.1",
+    "@claude-code-best/audio-capture-linux-x64": "1.7.1",
+    "@claude-code-best/audio-capture-win32-arm64": "1.7.1",
+    "@claude-code-best/audio-capture-win32-x64": "1.7.1"
   },
   "devDependencies": {
     "@alcalzone/ansi-tokenize": "^0.3.0",
@@ -146,7 +155,6 @@
     "chalk": "^5.6.2",
     "chokidar": "^5.0.0",
     "cli-boxes": "^4.0.1",
-    "cli-highlight": "^2.1.11",
     "code-excerpt": "^4.0.0",
     "color-diff-napi": "workspace:*",
     "diff": "^8.0.4",
