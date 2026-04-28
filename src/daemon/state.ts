@@ -12,6 +12,13 @@ export interface DaemonStateData {
   startedAt: string
   workerKinds: string[]
   lastStatus: 'running' | 'stopped' | 'error'
+  localRcs?: {
+    baseUrl: string
+    webUrl: string
+    host: string
+    port: number
+    pairingTokenExpiresAt?: string
+  }
 }
 
 export type DaemonStatus = 'running' | 'stopped' | 'stale'

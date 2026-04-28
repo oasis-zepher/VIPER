@@ -75,6 +75,12 @@ describe('writeDaemonState', () => {
       startedAt: '2026-01-01T00:00:00Z',
       workerKinds: ['rcs'],
       lastStatus: 'running' as const,
+      localRcs: {
+        baseUrl: 'http://192.168.1.10:3000',
+        webUrl: 'http://192.168.1.10:3000/code?pair=abc',
+        host: '0.0.0.0',
+        port: 3000,
+      },
     }
     writeDaemonState(state, 'test')
     const filePath = getDaemonStateFilePath('test')
@@ -82,6 +88,7 @@ describe('writeDaemonState', () => {
     const parsed = JSON.parse(readFileSync(filePath, 'utf-8'))
     expect(parsed.pid).toBe(1234)
     expect(parsed.cwd).toBe('/test')
+    expect(parsed.localRcs.webUrl).toContain('/code?pair=abc')
   })
 
   test('creates directory recursively', () => {

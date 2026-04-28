@@ -2,6 +2,7 @@ import { type ChildProcess } from 'child_process'
 import { resolve } from 'path'
 import { buildCliLaunch, spawnCli } from '../utils/cliLaunch.js'
 import { errorMessage } from '../utils/errors.js'
+import { LOCAL_RCS_ENV } from '../bridge/localRcs.js'
 import {
   writeDaemonState,
   removeDaemonState,
@@ -128,6 +129,12 @@ OPTIONS (for start)
   --permission-mode <mode>  Permission mode for spawned sessions
   --sandbox                 Enable sandbox mode
   --name <name>             Session name
+  --local-rcs               Start bundled LAN Remote Control server
+  --rcs-host <host>         RCS bind host (default: 0.0.0.0)
+  --rcs-port <port>         RCS bind port (default: 3000)
+  --rcs-base-url <url>      RCS URL advertised to bridge and phone
+  --rcs-api-key <key>       API key for local RCS bridge auth
+  --rcs-pairing-token <key> Short-lived Web UI pairing token
   -h, --help                Show this help
 `)
 }
@@ -147,6 +154,10 @@ async function showUnifiedStatus(): Promise<void> {
       console.log(`  CWD:     ${s.cwd}`)
       console.log(`  Started: ${s.startedAt}`)
       console.log(`  Workers: ${s.workerKinds.join(', ')}`)
+      if (s.localRcs) {
+        console.log(`  RCS URL: ${s.localRcs.webUrl}`)
+        console.log(`  RCS PID: supervisor-managed`)
+      }
       break
     }
     case 'stopped':
@@ -218,6 +229,28 @@ function parseSupervisorArgs(args: string[]): Record<string, string> {
       result.name = args[++i]!
     } else if (arg.startsWith('--name=')) {
       result.name = arg.slice('--name='.length)
+    } else if (arg === '--local-rcs') {
+      result.localRcs = '1'
+    } else if (arg === '--rcs-host' && i + 1 < args.length) {
+      result.rcsHost = args[++i]!
+    } else if (arg.startsWith('--rcs-host=')) {
+      result.rcsHost = arg.slice('--rcs-host='.length)
+    } else if (arg === '--rcs-port' && i + 1 < args.length) {
+      result.rcsPort = args[++i]!
+    } else if (arg.startsWith('--rcs-port=')) {
+      result.rcsPort = arg.slice('--rcs-port='.length)
+    } else if (arg === '--rcs-base-url' && i + 1 < args.length) {
+      result.rcsBaseUrl = args[++i]!
+    } else if (arg.startsWith('--rcs-base-url=')) {
+      result.rcsBaseUrl = arg.slice('--rcs-base-url='.length)
+    } else if (arg === '--rcs-api-key' && i + 1 < args.length) {
+      result.rcsApiKey = args[++i]!
+    } else if (arg.startsWith('--rcs-api-key=')) {
+      result.rcsApiKey = arg.slice('--rcs-api-key='.length)
+    } else if (arg === '--rcs-pairing-token' && i + 1 < args.length) {
+      result.rcsPairingToken = args[++i]!
+    } else if (arg.startsWith('--rcs-pairing-token=')) {
+      result.rcsPairingToken = arg.slice('--rcs-pairing-token='.length)
     }
   }
   return result
@@ -233,16 +266,16 @@ async function runSupervisor(args: string[]): Promise<void> {
 
   console.log(`[daemon] supervisor starting in ${dir}`)
 
-  const workers: WorkerState[] = [
-    {
-      kind: 'remoteControl',
-      process: null,
-      backoffMs: BACKOFF_INITIAL_MS,
-      failureCount: 0,
-      parked: false,
-      lastStartTime: 0,
-    },
-  ]
+  const workerKinds =
+    config.localRcs === '1' ? ['rcsServer', 'remoteControl'] : ['remoteControl']
+  const workers: WorkerState[] = workerKinds.map(kind => ({
+    kind,
+    process: null,
+    backoffMs: BACKOFF_INITIAL_MS,
+    failureCount: 0,
+    parked: false,
+    lastStartTime: 0,
+  }))
 
   // Write daemon state file so other CLI processes can query/stop us
   writeDaemonState({
@@ -251,6 +284,18 @@ async function runSupervisor(args: string[]): Promise<void> {
     startedAt: new Date().toISOString(),
     workerKinds: workers.map(w => w.kind),
     lastStatus: 'running',
+    localRcs:
+      config.localRcs === '1' && config.rcsBaseUrl && config.rcsPort
+        ? {
+            baseUrl: config.rcsBaseUrl,
+            webUrl: buildLocalRcsWebUrl(config),
+            host: config.rcsHost || '0.0.0.0',
+            port: parseInt(config.rcsPort, 10),
+            pairingTokenExpiresAt: config.rcsPairingToken
+              ? new Date(Date.now() + 60 * 60 * 1000).toISOString()
+              : undefined,
+          }
+        : undefined,
   })
 
   const controller = new AbortController()
@@ -336,6 +381,24 @@ function spawnWorker(
     CLAUDE_CODE_SESSION_KIND: 'daemon-worker',
   }
 
+  if (config.localRcs === '1') {
+    env[LOCAL_RCS_ENV] = '1'
+  }
+
+  if (worker.kind === 'rcsServer') {
+    env.RCS_HOST = config.rcsHost || '0.0.0.0'
+    env.RCS_PORT = config.rcsPort || '3000'
+    env.RCS_BASE_URL = config.rcsBaseUrl
+    env.RCS_API_KEYS = config.rcsApiKey
+    env.RCS_REQUIRE_WEB_PAIRING = '1'
+    env.RCS_PAIRING_TOKENS = config.rcsPairingToken
+    env.RCS_PAIRING_TOKEN_TTL_SECONDS = '3600'
+  } else if (config.localRcs === '1') {
+    env.CLAUDE_BRIDGE_BASE_URL = config.rcsBaseUrl
+    env.CLAUDE_BRIDGE_SESSION_INGRESS_URL = config.rcsBaseUrl
+    env.CLAUDE_BRIDGE_OAUTH_TOKEN = config.rcsApiKey
+  }
+
   console.log(`[daemon] spawning worker '${worker.kind}'`)
 
   const launch = buildCliLaunch([`--daemon-worker=${worker.kind}`], { env })
@@ -410,4 +473,16 @@ function spawnWorker(
       BACKOFF_CAP_MS,
     )
   })
+}
+
+function buildLocalRcsWebUrl(config: Record<string, string>): string {
+  const baseUrl = config.rcsBaseUrl || ''
+  if (!baseUrl) {
+    return ''
+  }
+  const url = new URL('/code', baseUrl)
+  if (config.rcsPairingToken) {
+    url.searchParams.set('pair', config.rcsPairingToken)
+  }
+  return url.toString()
 }

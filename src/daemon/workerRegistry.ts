@@ -4,7 +4,7 @@ import {
   BridgeHeadlessPermanentError,
   runBridgeHeadless,
 } from '../bridge/bridgeMain.js'
-import { getClaudeAIOAuthTokens } from '../utils/auth.js'
+import { getBridgeAccessToken } from '../bridge/bridgeConfig.js'
 import { errorMessage } from '../utils/errors.js'
 
 /**
@@ -20,8 +20,7 @@ const EXIT_CODE_TRANSIENT = 1
  *   `claude --daemon-worker=<kind>`
  *
  * The supervisor spawns this as a child process. Each `kind` maps to a
- * different long-running task. Currently only `remoteControl` is implemented
- * — it runs the headless bridge loop that accepts remote sessions.
+ * different long-running task.
  */
 export async function runDaemonWorker(kind?: string): Promise<void> {
   if (!kind) {
@@ -31,6 +30,9 @@ export async function runDaemonWorker(kind?: string): Promise<void> {
   }
 
   switch (kind) {
+    case 'rcsServer':
+      await runRcsServerWorker()
+      break
     case 'remoteControl':
       await runRemoteControlWorker()
       break
@@ -84,11 +86,10 @@ async function runRemoteControlWorker(): Promise<void> {
     sandbox,
     sessionTimeoutMs,
     createSessionOnStart,
-    getAccessToken: () => getClaudeAIOAuthTokens()?.accessToken,
+    getAccessToken: () => getBridgeAccessToken(),
     onAuth401: async (_failedToken: string) => {
       // In daemon context, re-check auth — supervisor may have refreshed token.
-      const tokens = getClaudeAIOAuthTokens()
-      return !!tokens?.accessToken
+      return !!getBridgeAccessToken()
     },
     log: (s: string) => {
       console.log(`[remoteControl] ${s}`)
@@ -105,6 +106,47 @@ async function runRemoteControlWorker(): Promise<void> {
       console.error(`[remoteControl] transient error: ${errorMessage(err)}`)
       process.exitCode = EXIT_CODE_TRANSIENT
     }
+  } finally {
+    process.off('SIGTERM', onSignal)
+    process.off('SIGINT', onSignal)
+  }
+}
+
+/**
+ * RCS server worker — hosts packages/remote-control-server in the daemon
+ * process group so phone browsers can reach the local Web UI.
+ */
+async function runRcsServerWorker(): Promise<void> {
+  const controller = new AbortController()
+  const onSignal = () => controller.abort()
+  process.on('SIGTERM', onSignal)
+  process.on('SIGINT', onSignal)
+
+  try {
+    const serverModule = await import(
+      '../../packages/remote-control-server/src/index.js'
+    )
+    const server = Bun.serve(serverModule.default)
+    console.log(
+      `[rcsServer] listening on ${server.hostname}:${server.port} baseUrl=${
+        process.env.RCS_BASE_URL || ''
+      }`,
+    )
+
+    await new Promise<void>(resolve => {
+      if (controller.signal.aborted) {
+        resolve()
+        return
+      }
+      controller.signal.addEventListener('abort', () => resolve(), {
+        once: true,
+      })
+    })
+
+    server.stop(true)
+  } catch (err) {
+    console.error(`[rcsServer] error: ${errorMessage(err)}`)
+    process.exitCode = EXIT_CODE_TRANSIENT
   } finally {
     process.off('SIGTERM', onSignal)
     process.off('SIGINT', onSignal)

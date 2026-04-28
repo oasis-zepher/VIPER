@@ -57,6 +57,7 @@ import {
   registerWorker,
   sameSessionId,
 } from './workSecret.js'
+import { getHttpBridgeBaseUrlError } from './localRcs.js'
 
 export type BackoffConfig = {
   connInitialMs: number
@@ -447,9 +448,11 @@ export async function runBridgeLoop(
   ): (status: SessionDoneStatus) => void {
     return (rawStatus: SessionDoneStatus): void => {
       const workId = sessionWorkIds.get(sessionId)
-      rcLog(`session done: sessionId=${sessionId} workId=${workId ?? 'none'} status=${rawStatus}` +
-        ` wasTimedOut=${timedOutSessions.has(sessionId)} duration=${Math.round((Date.now() - startTime) / 1000)}s` +
-        ` stderr=${handle.lastStderr.length > 0 ? handle.lastStderr.join('\\n').slice(0, 500) : '(none)'}`)
+      rcLog(
+        `session done: sessionId=${sessionId} workId=${workId ?? 'none'} status=${rawStatus}` +
+          ` wasTimedOut=${timedOutSessions.has(sessionId)} duration=${Math.round((Date.now() - startTime) / 1000)}s` +
+          ` stderr=${handle.lastStderr.length > 0 ? handle.lastStderr.join('\\n').slice(0, 500) : '(none)'}`,
+      )
       activeSessions.delete(sessionId)
       sessionStartTimes.delete(sessionId)
       sessionWorkIds.delete(sessionId)
@@ -608,7 +611,9 @@ export async function runBridgeLoop(
     const pollConfig = getPollIntervalConfig()
 
     try {
-      rcLog(`poll: envId=${environmentId} activeSessions=${activeSessions.size}`)
+      rcLog(
+        `poll: envId=${environmentId} activeSessions=${activeSessions.size}`,
+      )
       const work = await api.pollForWork(
         environmentId,
         environmentSecret,
@@ -863,7 +868,9 @@ export async function runBridgeLoop(
           break
         case 'session': {
           const sessionId = work.data.id
-          rcLog(`work received: type=session sessionId=${sessionId} workId=${work.id}`)
+          rcLog(
+            `work received: type=session sessionId=${sessionId} workId=${work.id}`,
+          )
           try {
             validateBridgeId(sessionId, 'session_id')
           } catch {
@@ -1031,9 +1038,9 @@ export async function runBridgeLoop(
 
           rcLog(
             `spawning session: sessionId=${sessionId} sdkUrl=${sdkUrl}` +
-            ` useCcrV2=${useCcrV2} workerEpoch=${workerEpoch}` +
-            ` dir=${sessionDir}` +
-            ` accessToken=${secret.session_ingress_token ? secret.session_ingress_token.slice(0, 8) + '...' : 'NONE'}`,
+              ` useCcrV2=${useCcrV2} workerEpoch=${workerEpoch}` +
+              ` dir=${sessionDir}` +
+              ` accessToken=${secret.session_ingress_token ? secret.session_ingress_token.slice(0, 8) + '...' : 'NONE'}`,
           )
           const spawnResult = safeSpawn(
             spawner,
@@ -1280,8 +1287,8 @@ export async function runBridgeLoop(
       const errMsg = describeAxiosError(err)
       rcLog(
         `poll error: ${errMsg}` +
-        ` isConn=${isConnectionError(err)} isServer=${isServerError(err)}` +
-        ` activeSessions=${activeSessions.size}`,
+          ` isConn=${isConnectionError(err)} isServer=${isServerError(err)}` +
+          ` activeSessions=${activeSessions.size}`,
       )
 
       if (isConnectionError(err) || isServerError(err)) {
@@ -2195,16 +2202,12 @@ export async function bridgeMain(args: string[]): Promise<void> {
   // CLAUDE_BRIDGE_BASE_URL overrides this for ant local dev only.
   const baseUrl = getBridgeBaseUrl()
 
-  // For non-localhost targets, require HTTPS to protect credentials.
-  if (
-    baseUrl.startsWith('http://') &&
-    !baseUrl.includes('localhost') &&
-    !baseUrl.includes('127.0.0.1')
-  ) {
+  // For non-localhost targets, require HTTPS unless explicitly running the
+  // generated local RCS daemon on a private LAN address.
+  const httpBaseUrlError = getHttpBridgeBaseUrlError(baseUrl)
+  if (httpBaseUrlError) {
     // biome-ignore lint/suspicious/noConsole:: intentional console output
-    console.error(
-      'Error: Remote Control base URL uses HTTP. Only HTTPS or localhost HTTP is allowed.',
-    )
+    console.error(`Error: ${httpBaseUrlError}`)
     // eslint-disable-next-line custom-rules/no-process-exit
     process.exit(1)
   }
@@ -2855,14 +2858,9 @@ export async function runBridgeHeadless(
 
   const { getBridgeBaseUrl } = await import('./bridgeConfig.js')
   const baseUrl = getBridgeBaseUrl()
-  if (
-    baseUrl.startsWith('http://') &&
-    !baseUrl.includes('localhost') &&
-    !baseUrl.includes('127.0.0.1')
-  ) {
-    throw new BridgeHeadlessPermanentError(
-      'Remote Control base URL uses HTTP. Only HTTPS or localhost HTTP is allowed.',
-    )
+  const httpBaseUrlError = getHttpBridgeBaseUrlError(baseUrl)
+  if (httpBaseUrlError) {
+    throw new BridgeHeadlessPermanentError(httpBaseUrlError)
   }
   const sessionIngressUrl =
     process.env.CLAUDE_BRIDGE_SESSION_INGRESS_URL || baseUrl

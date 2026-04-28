@@ -43,6 +43,8 @@ describe('daemonMain subcommand routing', () => {
     expect(output).toContain('attach')
     expect(output).toContain('logs')
     expect(output).toContain('kill')
+    expect(output).toContain('--local-rcs')
+    expect(output).toContain('--rcs-base-url')
   })
 
   test('--help is alias for help', async () => {
