@@ -19,6 +19,21 @@ export type { ModelProviderHooks } from './hooks/types.js'
 export { registerClientFactories, getClientFactories } from './client/index.js'
 export type { ClientFactories } from './client/types.js'
 
+// Provider registry
+export {
+  getProviderEntry,
+  isNonAnthropicProvider,
+  registerProvider,
+} from './providerRegistry.js'
+export type {
+  APIProvider,
+  AnthropicClientProvider,
+  NonAnthropicAdapter,
+  ProviderEntry,
+  ProviderQueryFunction,
+  ProviderTool,
+} from './providerRegistry.js'
+
 // Types
 export * from './types/index.js'
 

@@ -24,7 +24,7 @@ import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
 } from 'src/utils/model/providers.js'
-import { getProviderEntry } from './providerRegistry.js'
+import { getProviderEntry } from '@ant/model-provider/providerRegistry'
 // Side-effect: register built-in providers on first import
 import './providerRegistrations.js'
 import {

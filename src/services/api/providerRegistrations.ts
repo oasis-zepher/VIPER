@@ -6,7 +6,10 @@
  * or a client factory (Anthropic-family).
  */
 
-import { registerProvider, type ProviderEntry } from './providerRegistry.js'
+import {
+  registerProvider,
+  type ProviderEntry,
+} from '@ant/model-provider/providerRegistry'
 
 // ─── Non-Anthropic adapters (lazy-imported) ─────────────────────────────
 
@@ -14,7 +17,13 @@ registerProvider('openai', (): ProviderEntry => ({
   kind: 'adapter',
   query: async function* (messages, systemPrompt, tools, signal, options, thinkingConfig) {
     const { queryModelOpenAI } = require('./openai/index.js') as typeof import('./openai/index.js')
-    yield* queryModelOpenAI(messages, systemPrompt, tools, signal, options)
+    yield* queryModelOpenAI(
+      messages,
+      systemPrompt,
+      tools as import('../../Tool.js').Tools,
+      signal,
+      options as import('./claude.js').Options,
+    )
   },
 }))
 
@@ -22,7 +31,14 @@ registerProvider('gemini', (): ProviderEntry => ({
   kind: 'adapter',
   query: async function* (messages, systemPrompt, tools, signal, options, thinkingConfig) {
     const { queryModelGemini } = require('./gemini/index.js') as typeof import('./gemini/index.js')
-    yield* queryModelGemini(messages, systemPrompt, tools, signal, options, thinkingConfig)
+    yield* queryModelGemini(
+      messages,
+      systemPrompt,
+      tools as import('../../Tool.js').Tools,
+      signal,
+      options as import('./claude.js').Options,
+      thinkingConfig as import('../../utils/thinking.js').ThinkingConfig,
+    )
   },
 }))
 
@@ -30,7 +46,13 @@ registerProvider('grok', (): ProviderEntry => ({
   kind: 'adapter',
   query: async function* (messages, systemPrompt, tools, signal, options, thinkingConfig) {
     const { queryModelGrok } = require('./grok/index.js') as typeof import('./grok/index.js')
-    yield* queryModelGrok(messages, systemPrompt, tools, signal, options)
+    yield* queryModelGrok(
+      messages,
+      systemPrompt,
+      tools as import('../../Tool.js').Tools,
+      signal,
+      options as import('./claude.js').Options,
+    )
   },
 }))
 
