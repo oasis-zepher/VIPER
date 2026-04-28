@@ -16,7 +16,7 @@ import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
 } from 'src/utils/model/providers.js'
-import { getProxyFetchOptions } from 'src/utils/proxy.js'
+import { getProxyFetchOptions } from '../../utils/proxy.js'
 import {
   getIsNonInteractiveSession,
   getSessionId,

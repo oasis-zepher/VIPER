@@ -1,4 +1,4 @@
-import { describe, expect, test, mock, beforeEach } from 'bun:test'
+import { afterAll, beforeEach, describe, expect, mock, test } from 'bun:test'
 
 // ── Heavy module mocks (must be before any import of the module under test) ──
 
@@ -26,13 +26,8 @@ mock.module('../../../Tool.js', () => ({
   buildTool: mock((def: any) => def),
 }))
 
-mock.module('src/utils/config.ts', () => ({
+mock.module('../../../utils/config.js', () => ({
   enableConfigs: mock(() => {}),
-}))
-
-mock.module('../../../bootstrap/state.js', () => ({
-  setOriginalCwd: mock(() => {}),
-  addSlowOperation: mock(() => {}),
 }))
 
 const mockGetDefaultAppState = mock(() => ({
@@ -143,6 +138,10 @@ mock.module('../../../commands.js', () => ({
 
 const { AcpAgent } = await import('../agent.js')
 const { forwardSessionUpdates } = await import('../bridge.js')
+
+afterAll(() => {
+  mock.restore()
+})
 
 // ── Helpers ───────────────────────────────────────────────────────
 
