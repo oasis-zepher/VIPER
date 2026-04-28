@@ -1,10 +1,15 @@
-import { beforeEach, describe, expect, test } from 'bun:test'
+import { beforeEach, describe, expect, mock, test } from 'bun:test'
+
+mock.module('../../../../../../src/proactive/index.js', () => ({
+  isProactiveActive: () => false,
+}))
+
 import { SleepTool } from '../SleepTool'
 import {
   enqueue,
   getCommandQueue,
   resetCommandQueue,
-} from 'src/utils/messageQueueManager.js'
+} from '../../../../../../src/utils/messageQueueManager.js'
 
 describe('SleepTool', () => {
   beforeEach(() => {

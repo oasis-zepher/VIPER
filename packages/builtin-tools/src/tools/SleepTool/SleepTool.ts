@@ -1,9 +1,9 @@
 import { feature } from 'bun:bundle'
 import { z } from 'zod/v4'
-import type { ToolResultBlockParam } from 'src/Tool.js'
-import { buildTool } from 'src/Tool.js'
-import { lazySchema } from 'src/utils/lazySchema.js'
-import { notifyAutomationStateChanged } from 'src/utils/sessionState.js'
+import type { ToolResultBlockParam } from '../../../../../src/Tool.js'
+import { buildTool } from '../../../../../src/Tool.js'
+import { lazySchema } from '../../../../../src/utils/lazySchema.js'
+import { notifyAutomationStateChanged } from '../../../../../src/utils/sessionState.js'
 import { SLEEP_TOOL_NAME, DESCRIPTION, SLEEP_TOOL_PROMPT } from './prompt.js'
 
 const SLEEP_WAKE_CHECK_INTERVAL_MS = 500
@@ -28,7 +28,7 @@ function isProactiveAutomationEnabled(): boolean {
   }
 
   const mod =
-    require('src/proactive/index.js') as typeof import('src/proactive/index.js')
+    require('../../../../../src/proactive/index.js') as typeof import('../../../../../src/proactive/index.js')
   return mod.isProactiveActive()
 }
 
@@ -38,13 +38,13 @@ function isProactiveSleepAllowed(): boolean {
   }
 
   const mod =
-    require('src/proactive/index.js') as typeof import('src/proactive/index.js')
+    require('../../../../../src/proactive/index.js') as typeof import('../../../../../src/proactive/index.js')
   return mod.isProactiveActive()
 }
 
 function hasQueuedWakeSignal(): boolean {
   const queue =
-    require('src/utils/messageQueueManager.js') as typeof import('src/utils/messageQueueManager.js')
+    require('../../../../../src/utils/messageQueueManager.js') as typeof import('../../../../../src/utils/messageQueueManager.js')
   return queue.hasCommandsInQueue()
 }
 

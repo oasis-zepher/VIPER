@@ -9,13 +9,6 @@ const noop = () => {};
 
 mock.module("bun:bundle", () => ({ feature: () => false }));
 
-mock.module("src/constants/tools.js", () => ({
-  ALL_AGENT_DISALLOWED_TOOLS: new Set(),
-  ASYNC_AGENT_ALLOWED_TOOLS: new Set(),
-  CUSTOM_AGENT_DISALLOWED_TOOLS: new Set(),
-  IN_PROCESS_TEAMMATE_ALLOWED_TOOLS: new Set(),
-}));
-
 mock.module("src/services/AgentSummary/agentSummary.js", () => ({
   startAgentSummarization: noop,
 }));
@@ -29,16 +22,6 @@ mock.module("src/services/analytics/index.js", () => ({
   AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS: undefined,
 }));
 
-mock.module("src/services/api/dumpPrompts.js", () => ({
-  clearDumpState: noop,
-}));
-
-mock.module("src/Tool.js", () => ({
-  toolMatchesName: () => false,
-  findToolByName: noop,
-}));
-
-// messages.ts is complex - provide stubs for all named exports
 mock.module("src/utils/messages.ts", () => ({
   extractTextContent: (content: any[]) =>
     content?.filter?.((b: any) => b.type === "text")?.map?.((b: any) => b.text)?.join("") ?? "",
@@ -64,6 +47,10 @@ mock.module("src/utils/messages.ts", () => ({
   buildYoloRejectionMessage: () => "",
   buildClassifierUnavailableMessage: () => "",
   isEmptyMessageText: () => true,
+  isThinkingMessage: () => false,
+  extractTag: () => null,
+  isSyntheticMessage: () => false,
+  hasToolCallsInLastAssistantTurn: () => false,
   createAssistantMessage: noop,
   createAssistantAPIErrorMessage: noop,
   createUserMessage: noop,
@@ -71,20 +58,101 @@ mock.module("src/utils/messages.ts", () => ({
   createUserInterruptionMessage: noop,
   createSyntheticUserCaveatMessage: noop,
   formatCommandInputTags: noop,
+  createModelSwitchBreadcrumbs: noop,
+  createProgressMessage: noop,
+  createToolResultStopMessage: noop,
+  isNotEmptyMessage: () => true,
+  deriveUUID: (uuid: string) => uuid,
+  normalizeMessages: (messages: any) => messages,
+  isToolUseRequestMessage: () => false,
+  isToolUseResultMessage: () => false,
+  reorderMessagesInUI: (messages: any) => messages,
+  hasUnresolvedHooks: () => false,
+  getToolResultIDs: () => ({ toolUseIDs: new Set(), toolResultIDs: new Set() }),
+  getSiblingToolUseIDs: () => new Set(),
+  buildMessageLookups: () => ({}),
+  EMPTY_LOOKUPS: {},
+  EMPTY_STRING_SET: new Set(),
+  buildSubagentLookups: () => ({}),
+  getSiblingToolUseIDsFromLookup: () => new Set(),
+  getProgressMessagesFromLookup: () => [],
+  hasUnresolvedHooksFromLookup: () => false,
+  getToolUseIDs: () => new Set(),
+  reorderAttachmentsForAPI: (messages: any) => messages,
+  isSystemLocalCommandMessage: () => false,
+  stripToolReferenceBlocksFromUserMessage: (message: any) => message,
+  stripCallerFieldFromAssistantMessage: (message: any) => message,
+  normalizeMessagesForAPI: (messages: any) => messages,
+  mergeUserMessagesAndToolResults: (messages: any) => messages,
+  mergeAssistantMessages: (a: any) => a,
+  mergeUserMessages: (a: any) => a,
+  mergeUserContentBlocks: (a: any) => a,
+  normalizeContentFromAPI: (content: any) => content,
+  stripPromptXMLTags: (content: string) => content,
+  getToolUseID: () => null,
+  filterUnresolvedToolUses: (messages: any) => messages,
+  getAssistantMessageText: () => null,
+  getUserMessageText: () => null,
+  textForResubmit: () => "",
+  getContentText: () => "",
+  handleMessageFromStream: noop,
+  wrapInSystemReminder: (content: string) => content,
+  wrapMessagesInSystemReminder: (messages: any) => messages,
+  PLAN_PHASE4_CONTROL: "",
+  normalizeAttachmentForAPI: (attachment: any) => attachment,
+  createSystemMessage: noop,
+  createPermissionRetryMessage: noop,
+  createBridgeStatusMessage: noop,
+  createScheduledTaskFireMessage: noop,
+  createStopHookSummaryMessage: noop,
+  createTurnDurationMessage: noop,
+  createAwaySummaryMessage: noop,
+  createMemorySavedMessage: noop,
+  createAgentsKilledMessage: noop,
+  createApiMetricsMessage: noop,
+  createCommandInputMessage: noop,
+  createCompactBoundaryMessage: noop,
+  createMicrocompactBoundaryMessage: noop,
+  createSystemAPIErrorMessage: noop,
+  isCompactBoundaryMessage: () => false,
+  findLastCompactBoundaryIndex: () => -1,
+  getMessagesAfterCompactBoundary: (messages: any) => messages,
+  shouldShowUserMessage: () => true,
+  countToolCalls: () => 0,
+  hasSuccessfulToolCall: () => false,
+  filterWhitespaceOnlyAssistantMessages: (messages: any) => messages,
+  filterOrphanedThinkingOnlyMessages: (messages: any) => messages,
+  stripSignatureBlocks: (messages: any) => messages,
+  createToolUseSummaryMessage: noop,
+  ensureToolResultPairing: (messages: any) => messages,
+  stripAdvisorBlocks: (messages: any) => messages,
+  wrapCommandText: (text: string) => text,
 }));
 
 mock.module("src/tasks/LocalAgentTask/LocalAgentTask.js", () => ({
+  LocalAgentTask: {},
   completeAgentTask: noop,
   createActivityDescriptionResolver: () => ({}),
   createProgressTracker: () => ({}),
+  appendMessageToLocalAgent: noop,
+  backgroundAgentTask: noop,
+  drainPendingMessages: () => [],
   enqueueAgentNotification: noop,
   failAgentTask: noop,
   getProgressUpdate: () => ({ tokenCount: 0, toolUseCount: 0 }),
   getTokenCountFromTracker: () => 0,
   isLocalAgentTask: () => false,
+  isPanelAgentTask: () => false,
   killAsyncAgent: noop,
+  killAllRunningAgentTasks: noop,
+  markAgentsNotified: noop,
+  queuePendingMessage: noop,
+  registerAgentForeground: noop,
+  registerAsyncAgent: noop,
+  unregisterAgentForeground: noop,
   updateAgentProgress: noop,
   updateProgressFromMessage: noop,
+  updateAgentSummary: noop,
 }));
 
 mock.module("src/utils/debug.ts", () => ({
@@ -122,8 +190,6 @@ mock.module("src/utils/errors.js", () => ({
   classifyAxiosError: () => ({ category: "unknown" }),
 }));
 
-mock.module("src/utils/forkedAgent.js", () => ({}));
-
 mock.module("src/utils/permissions/yoloClassifier.js", () => ({
   buildTranscriptForClassifier: () => "",
   classifyYoloAction: () => null,
@@ -134,7 +200,20 @@ mock.module("src/utils/task/sdkProgress.js", () => ({
 }));
 
 mock.module("src/utils/tokens.js", () => ({
+  getTokenUsage: () => undefined,
   getTokenCountFromUsage: () => 0,
+  tokenCountFromLastAPIResponse: () => 0,
+  finalContextTokensFromLastResponse: () => 0,
+  messageTokenCountFromLastAPIResponse: () => 0,
+  getCurrentUsage: () => ({
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheCreationInputTokens: 0,
+    cacheReadInputTokens: 0,
+  }),
+  doesMostRecentAssistantMessageExceed200k: () => false,
+  getAssistantMessageContentLength: () => 0,
+  tokenCountWithEstimation: () => 0,
 }));
 
 mock.module("src/tools/ExitPlanModeTool/constants.js", () => ({
@@ -147,12 +226,6 @@ mock.module("src/tools/AgentTool/constants.js", () => ({
 }));
 
 mock.module("src/tools/AgentTool/loadAgentsDir.js", () => ({}));
-
-mock.module("src/state/AppState.js", () => ({}));
-
-mock.module("src/types/ids.js", () => ({
-  asAgentId: (id: string) => id,
-}));
 
 // Break circular dep
 mock.module("src/tools/AgentTool/AgentTool.tsx", () => ({

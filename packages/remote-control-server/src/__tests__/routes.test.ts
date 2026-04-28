@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { createServer } from "node:net";
 
 // Mock config
 const mockConfig = {
@@ -55,6 +56,24 @@ function createApp() {
 }
 
 const AUTH_HEADERS = { Authorization: "Bearer test-api-key", "X-Username": "testuser" };
+
+async function getFreePort(): Promise<number> {
+  const server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
+
+  const address = server.address();
+  const port = typeof address === "object" && address ? address.port : 0;
+
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.close(() => resolve());
+  });
+
+  return port;
+}
 
 function toWebSessionId(sessionId: string): string {
   if (!sessionId.startsWith("cse_")) return sessionId;
@@ -1174,7 +1193,7 @@ describe("V1 Session Ingress Routes (HTTP)", () => {
     publishSessionEvent(id, "user", { content: "compat ws replay" }, "outbound");
 
     const server = Bun.serve({
-      port: 0,
+      port: await getFreePort(),
       fetch: app.fetch,
       websocket: {
         ...sessionIngressWebsocket,

@@ -4,10 +4,32 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 // src/* path alias resolution. Provide AbortError directly so the dynamic
 // import in createAdapter() never needs to resolve the alias at runtime.
 const _abortMock = () => ({
+  ClaudeError: class ClaudeError extends Error {},
+  MalformedCommandError: class MalformedCommandError extends Error {},
   AbortError: class AbortError extends Error {
     constructor(message?: string) { super(message); this.name = 'AbortError' }
   },
+  ConfigParseError: class ConfigParseError extends Error {},
+  ShellError: class ShellError extends Error {},
+  TeleportOperationError: class TeleportOperationError extends Error {},
+  TelemetrySafeError_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS: class TelemetrySafeError extends Error {},
   isAbortError: (e: unknown) => e instanceof Error && (e as Error).name === 'AbortError',
+  hasExactErrorMessage: (e: unknown, message: string) => e instanceof Error && e.message === message,
+  toError: (e: unknown) => e instanceof Error ? e : new Error(String(e)),
+  errorMessage: (e: unknown) => e instanceof Error ? e.message : String(e),
+  getErrnoCode: (e: unknown) =>
+    e && typeof e === 'object' && 'code' in e && typeof e.code === 'string'
+      ? e.code
+      : undefined,
+  isENOENT: (e: unknown) =>
+    e && typeof e === 'object' && 'code' in e && e.code === 'ENOENT',
+  getErrnoPath: (e: unknown) =>
+    e && typeof e === 'object' && 'path' in e && typeof e.path === 'string'
+      ? e.path
+      : undefined,
+  shortErrorStack: (e: unknown) => String(e),
+  isFsInaccessible: () => false,
+  classifyAxiosError: () => ({ category: 'other' }),
 })
 mock.module('src/utils/errors.js', _abortMock)
 mock.module('src/utils/errors', _abortMock)
@@ -202,10 +224,9 @@ describe('BraveSearchAdapter.search', () => {
     const controller = new AbortController()
     controller.abort()
 
-    const { AbortError } = await import('src/utils/errors')
     await expect(
       adapter.search('test', { signal: controller.signal }),
-    ).rejects.toThrow(AbortError)
+    ).rejects.toMatchObject({ name: 'AbortError' })
   })
 
   test('re-throws non-abort axios errors', async () => {
