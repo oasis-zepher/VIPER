@@ -69,6 +69,20 @@ export function apiBind(sessionId: string) {
   return api<void>("POST", "/web/bind", { sessionId });
 }
 
+export async function apiPair(token: string) {
+  const uuid = getUuid();
+  const res = await fetch(`/web/pair?uuid=${encodeURIComponent(uuid)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const err = data.error || { type: "unknown", message: res.statusText };
+    throw new Error(err.message || err.type);
+  }
+}
+
 export function apiFetchSessions() {
   return api<Session[]>("GET", "/web/sessions");
 }

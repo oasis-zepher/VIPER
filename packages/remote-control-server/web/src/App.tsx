@@ -3,7 +3,7 @@ import { Navbar } from "./components/Navbar";
 import { IdentityPanel } from "./components/IdentityPanel";
 import { TokenManagerDialog } from "./components/TokenManagerDialog";
 import { ThemeProvider } from "./lib/theme";
-import { getUuid, setUuid, apiBind, setActiveApiToken } from "./api/client";
+import { getUuid, setUuid, apiBind, apiPair, setActiveApiToken } from "./api/client";
 import { ACPDirectView } from "./components/ACPDirectView";
 import { useTokens } from "./hooks/useTokens";
 
@@ -41,6 +41,19 @@ export default function App() {
       const url = new URL(window.location.href);
       url.searchParams.delete("uuid");
       window.history.replaceState(null, "", url);
+    }
+
+    const pairToken = params.get("pair");
+    if (pairToken) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("pair");
+      window.history.replaceState(null, "", url);
+      apiPair(pairToken)
+        .then(() => window.location.reload())
+        .catch((err: unknown) => {
+          console.warn("Failed to pair browser:", err);
+        });
+      return;
     }
 
     // Check for ACP direct connection (?acp=1)

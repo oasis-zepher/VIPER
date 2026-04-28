@@ -10,6 +10,11 @@ const mockConfig = {
   heartbeatInterval: 20,
   jwtExpiresIn: 3600,
   disconnectTimeout: 300,
+  wsIdleTimeout: 30,
+  wsKeepaliveInterval: 20,
+  requireWebPairing: false,
+  pairingTokens: [] as string[],
+  pairingTokenTtlSeconds: 3600,
 };
 
 mock.module("../config", () => ({
@@ -18,7 +23,11 @@ mock.module("../config", () => ({
 }));
 
 import { Hono } from "hono";
-import { storeReset, storeCreateUser } from "../store";
+import {
+  storeAuthorizeWebUuid,
+  storeCreateUser,
+  storeReset,
+} from "../store";
 import { apiKeyAuth, sessionIngressAuth, uuidAuth, getUuidFromRequest } from "../auth/middleware";
 import { issueToken } from "../auth/token";
 import { generateWorkerJwt } from "../auth/jwt";
@@ -55,6 +64,7 @@ describe("Auth Middleware", () => {
 
   beforeEach(() => {
     storeReset();
+    mockConfig.requireWebPairing = false;
     app = createTestApp();
   });
 
@@ -181,6 +191,23 @@ describe("Auth Middleware", () => {
     test("rejects missing UUID", async () => {
       const res = await app.request("/uuid-test");
       expect(res.status).toBe(401);
+    });
+
+    test("requires pairing when web pairing mode is enabled", async () => {
+      mockConfig.requireWebPairing = true;
+      const res = await app.request("/uuid-test?uuid=unpaired");
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error.type).toBe("pairing_required");
+    });
+
+    test("accepts authorized UUID when web pairing mode is enabled", async () => {
+      mockConfig.requireWebPairing = true;
+      storeAuthorizeWebUuid("paired");
+      const res = await app.request("/uuid-test?uuid=paired");
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.uuid).toBe("paired");
     });
   });
 

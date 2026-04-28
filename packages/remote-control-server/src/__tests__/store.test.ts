@@ -6,6 +6,10 @@ import {
   storeCreateToken,
   storeGetUserByToken,
   storeDeleteToken,
+  storeAuthorizeWebUuid,
+  storeCreateWebPairingToken,
+  storeConsumeWebPairingToken,
+  storeIsWebUuidAuthorized,
   storeCreateEnvironment,
   storeGetEnvironment,
   storeUpdateEnvironment,
@@ -86,6 +90,25 @@ describe("store", () => {
 
     test("returns false for non-existent token", () => {
       expect(storeDeleteToken("nope")).toBe(false);
+    });
+  });
+
+  describe("web pairing tokens", () => {
+    test("authorizes UUID with a valid pairing token", () => {
+      storeCreateWebPairingToken("pair-1", 60);
+      expect(storeConsumeWebPairingToken("pair-1", "uuid-1")).toBe(true);
+      expect(storeIsWebUuidAuthorized("uuid-1")).toBe(true);
+    });
+
+    test("rejects expired pairing token", () => {
+      storeCreateWebPairingToken("pair-expired", -1);
+      expect(storeConsumeWebPairingToken("pair-expired", "uuid-1")).toBe(false);
+      expect(storeIsWebUuidAuthorized("uuid-1")).toBe(false);
+    });
+
+    test("stores explicit browser authorization", () => {
+      storeAuthorizeWebUuid("uuid-direct");
+      expect(storeIsWebUuidAuthorized("uuid-direct")).toBe(true);
     });
   });
 

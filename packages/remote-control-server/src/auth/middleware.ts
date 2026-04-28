@@ -2,6 +2,8 @@ import type { Context, Next } from "hono";
 import { validateApiKey } from "./api-key";
 import { verifyWorkerJwt } from "./jwt";
 import { resolveToken } from "./token";
+import { config } from "../config";
+import { storeIsWebUuidAuthorized } from "../store";
 
 /** Extract Bearer token from Authorization header or ?token= query param */
 function extractBearerToken(c: Context): string | undefined {
@@ -107,6 +109,9 @@ export async function uuidAuth(c: Context, next: Next) {
   const uuid = getUuidFromRequest(c);
   if (!uuid) {
     return c.json({ error: { type: "unauthorized", message: "Missing UUID" } }, 401);
+  }
+  if (config.requireWebPairing && !storeIsWebUuidAuthorized(uuid)) {
+    return c.json({ error: { type: "pairing_required", message: "Pair this browser from the VIPER terminal first" } }, 403);
   }
   c.set("uuid", uuid);
   await next();

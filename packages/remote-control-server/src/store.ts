@@ -66,6 +66,8 @@ const environments = new Map<string, EnvironmentRecord>();
 const sessions = new Map<string, SessionRecord>();
 const workItems = new Map<string, WorkItemRecord>();
 const sessionWorkers = new Map<string, SessionWorkerRecord>();
+const authorizedWebUuids = new Set<string>();
+const webPairingTokens = new Map<string, { expiresAt: Date; createdAt: Date }>();
 
 // UUID → session ownership: sessionId → Set of UUIDs
 const sessionOwners = new Map<string, Set<string>>();
@@ -94,6 +96,35 @@ export function storeGetUserByToken(token: string): { username: string; createdA
 
 export function storeDeleteToken(token: string): boolean {
   return tokenToUser.delete(token);
+}
+
+// ---------- Web pairing ----------
+
+export function storeCreateWebPairingToken(token: string, ttlSeconds: number): void {
+  const now = new Date();
+  webPairingTokens.set(token, {
+    createdAt: now,
+    expiresAt: new Date(now.getTime() + ttlSeconds * 1000),
+  });
+}
+
+export function storeConsumeWebPairingToken(token: string, uuid: string): boolean {
+  const record = webPairingTokens.get(token);
+  if (!record) return false;
+  if (record.expiresAt.getTime() < Date.now()) {
+    webPairingTokens.delete(token);
+    return false;
+  }
+  storeAuthorizeWebUuid(uuid);
+  return true;
+}
+
+export function storeAuthorizeWebUuid(uuid: string): void {
+  authorizedWebUuids.add(uuid);
+}
+
+export function storeIsWebUuidAuthorized(uuid: string): boolean {
+  return authorizedWebUuids.has(uuid);
 }
 
 // ---------- Environment ----------
@@ -432,4 +463,6 @@ export function storeReset() {
   workItems.clear();
   sessionWorkers.clear();
   sessionOwners.clear();
+  authorizedWebUuids.clear();
+  webPairingTokens.clear();
 }

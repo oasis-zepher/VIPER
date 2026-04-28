@@ -127,6 +127,15 @@ describe("api functions", () => {
     expect(fetchMock.lastOpts.headers).toEqual({ "Content-Type": "application/json" });
   });
 
+  test("apiPair posts the pairing token with UUID auth", async () => {
+    store["rcs_uuid"] = "test-uuid";
+    fetchMock.responseData = {};
+    await client.apiPair("pair-token");
+    expect(fetchMock.lastUrl).toContain("/web/pair?uuid=test-uuid");
+    expect(fetchMock.lastOpts.method).toBe("POST");
+    expect(fetchMock.lastOpts.body).toBe(JSON.stringify({ token: "pair-token" }));
+  });
+
   test("throws error on non-ok response", async () => {
     store["rcs_uuid"] = "test-uuid";
     fetchMock.response = { ok: false, status: 401, statusText: "Unauthorized" };

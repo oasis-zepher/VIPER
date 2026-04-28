@@ -11,6 +11,11 @@ const mockConfig = {
   heartbeatInterval: 20,
   jwtExpiresIn: 3600,
   disconnectTimeout: 300,
+  wsIdleTimeout: 30,
+  wsKeepaliveInterval: 20,
+  requireWebPairing: false,
+  pairingTokens: [] as string[],
+  pairingTokenTtlSeconds: 3600,
 };
 
 mock.module("../config", () => ({
@@ -19,7 +24,14 @@ mock.module("../config", () => ({
 }));
 
 import { Hono } from "hono";
-import { storeReset, storeCreateSession, storeCreateEnvironment, storeBindSession } from "../store";
+import {
+  storeBindSession,
+  storeCreateEnvironment,
+  storeCreateSession,
+  storeCreateWebPairingToken,
+  storeIsWebUuidAuthorized,
+  storeReset,
+} from "../store";
 import { removeEventBus, getAllEventBuses, getEventBus } from "../transport/event-bus";
 import { issueToken } from "../auth/token";
 import { publishSessionEvent } from "../services/transport";
@@ -56,6 +68,10 @@ function createApp() {
 }
 
 const AUTH_HEADERS = { Authorization: "Bearer test-api-key", "X-Username": "testuser" };
+
+beforeEach(() => {
+  mockConfig.requireWebPairing = false;
+});
 
 async function getFreePort(): Promise<number> {
   const server = createServer();
@@ -300,6 +316,7 @@ describe("V1 Environment Routes", () => {
 
   beforeEach(() => {
     storeReset();
+    mockConfig.requireWebPairing = false;
     app = createApp();
   });
 
@@ -574,6 +591,35 @@ describe("Web Auth Routes", () => {
       body: JSON.stringify({}),
     });
     expect(res.status).toBe(400);
+  });
+
+  test("POST /web/pair — authorizes UUID with pairing token", async () => {
+    mockConfig.requireWebPairing = true;
+    storeCreateWebPairingToken("pair-ok", 60);
+    const res = await app.request("/web/pair?uuid=phone-uuid", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: "pair-ok" }),
+    });
+    expect(res.status).toBe(200);
+    expect(storeIsWebUuidAuthorized("phone-uuid")).toBe(true);
+  });
+
+  test("POST /web/bind — requires paired UUID in pairing mode", async () => {
+    mockConfig.requireWebPairing = true;
+    const sessRes = await app.request("/v1/sessions", {
+      method: "POST",
+      headers: { ...AUTH_HEADERS, "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const { id } = await sessRes.json();
+
+    const bindRes = await app.request("/web/bind?uuid=unpaired", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: id }),
+    });
+    expect(bindRes.status).toBe(403);
   });
 });
 
@@ -1224,7 +1270,7 @@ describe("V1 Session Ingress Routes (HTTP)", () => {
       });
 
       expect(message).toContain("\"type\":\"user\"");
-      expect(message).toContain(`\"session_id\":\"${id}\"`);
+      expect(message).toContain(`"session_id":"${id}"`);
       expect(message).toContain("compat ws replay");
     } finally {
       await server.stop(true);

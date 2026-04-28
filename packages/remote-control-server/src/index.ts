@@ -26,6 +26,7 @@ import webAuth from "./routes/web/auth";
 import webSessions from "./routes/web/sessions";
 import webControl from "./routes/web/control";
 import webEnvironments from "./routes/web/environments";
+import { storeCreateWebPairingToken } from "./store";
 
 console.log("[RCS] In-memory store ready (no SQLite)");
 
@@ -101,6 +102,12 @@ console.log(`[RCS] Base URL: ${config.baseUrl || `http://localhost:${port}`}`);
 console.log(`[RCS] Disconnect timeout: ${config.disconnectTimeout}s`);
 console.log(`[RCS] WebSocket idle timeout: ${config.wsIdleTimeout}s (protocol-level pings)`);
 console.log(`[RCS] WebSocket keepalive interval: ${config.wsKeepaliveInterval}s (data frames)`);
+if (config.requireWebPairing) {
+  for (const token of config.pairingTokens) {
+    storeCreateWebPairingToken(token, config.pairingTokenTtlSeconds);
+  }
+  console.log(`[RCS] Web pairing enabled (${config.pairingTokens.length} token(s))`);
+}
 
 // Start disconnect monitor
 startDisconnectMonitor();
