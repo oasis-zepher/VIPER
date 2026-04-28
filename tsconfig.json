@@ -14,6 +14,8 @@
         "types": ["bun"],
         "paths": {
             "src/*": ["./src/*"],
+            "@claude-code-best/agent-core/*": ["./packages/agent-core/src/*"],
+            "@claude-code-best/agent-core": ["./packages/agent-core/src/index.ts"],
             "@claude-code-best/builtin-tools/*": ["./packages/builtin-tools/src/*"],
             "@claude-code-best/builtin-tools": ["./packages/builtin-tools/src/index.ts"],
             "@claude-code-best/mcp-client/*": ["./packages/mcp-client/src/*"],

@@ -13,7 +13,7 @@ import { randomUUID } from 'crypto'
 import type { PromptCommand } from '../commands.js'
 import type { QuerySource } from '../constants/querySource.js'
 import type { CanUseToolFn } from '../hooks/useCanUseTool.js'
-import { query } from '../query.js'
+import { query } from '@claude-code-best/agent-core'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,

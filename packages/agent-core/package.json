@@ -1,0 +1,15 @@
+{
+  "name": "@claude-code-best/agent-core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@claude-code-best/agent-tools": "workspace:*",
+    "@ant/model-provider": "workspace:*"
+  }
+}
