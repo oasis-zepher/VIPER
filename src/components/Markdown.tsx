@@ -83,7 +83,7 @@ export function Markdown(props: Props): React.ReactNode {
     return <MarkdownBody {...props} highlight={null} />
   }
   // Suspense fallback renders with highlight=null — plain markdown shows
-  // for ~50ms on first ever render while cli-highlight loads.
+  // for ~50ms on first ever render while highlight.js loads.
   return (
     <Suspense fallback={<MarkdownBody {...props} highlight={null} />}>
       <MarkdownWithHighlight {...props} />

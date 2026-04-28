@@ -2,8 +2,8 @@
  * Pure TypeScript port of vendor/color-diff-src.
  *
  * The Rust version uses syntect+bat for syntax highlighting and the similar
- * crate for word diffing. This port uses highlight.js (already a dep via
- * cli-highlight) and the diff npm package's diffArrays.
+ * crate for word diffing. This port uses highlight.js/lib/common and the diff
+ * npm package's diffArrays.
  *
  * API matches vendor/color-diff-src/index.d.ts exactly so callers don't change.
  *
@@ -40,10 +40,17 @@ type HLJSApi = typeof hljsNamespace.default
 let cachedHljs: HLJSApi | null = null
 function hljs(): HLJSApi {
   if (cachedHljs) return cachedHljs
-  const mod = nodeRequire('highlight.js')
+  const mod = nodeRequire('highlight.js/lib/common')
   // highlight.js uses `export =` (CJS). Under bun/ESM the interop wraps it
   // in .default; under node CJS the module IS the API. Check at runtime.
   cachedHljs = 'default' in mod && mod.default ? mod.default : mod
+  const dockerfile = nodeRequire('highlight.js/lib/languages/dockerfile')
+  cachedHljs!.registerLanguage(
+    'dockerfile',
+    'default' in dockerfile && dockerfile.default
+      ? dockerfile.default
+      : dockerfile,
+  )
   return cachedHljs!
 }
 
