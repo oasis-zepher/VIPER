@@ -20,6 +20,14 @@ import type { ThinkingConfig } from '../../../utils/thinking.js'
 import type { Options } from '../claude.js'
 import { recordLLMObservation } from '../../../services/langfuse/tracing.js'
 import { convertMessagesToLangfuse, convertOutputToLangfuse, convertToolsToLangfuse } from '../../../services/langfuse/convert.js'
+import {
+  type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+  logEvent,
+} from '../../../services/analytics/index.js'
+import {
+  buildCacheDiagnosticsMetadata,
+  summarizeCacheControlMarkers,
+} from '../cacheDiagnostics.js'
 import { streamGeminiGenerateContent } from './client.js'
 import { anthropicMessagesToGemini, resolveGeminiModel, adaptGeminiStreamToAnthropic, anthropicToolsToGemini, anthropicToolChoiceToGemini, GEMINI_THOUGHT_SIGNATURE_FIELD } from '@ant/model-provider'
 
@@ -106,6 +114,12 @@ export async function* queryModelGemini(
     let partialMessage: any = undefined
     let ttftMs = 0
     const start = Date.now()
+    const usage = {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+    }
 
     for await (const event of adaptedStream) {
       switch (event.type) {
@@ -193,6 +207,36 @@ export async function* queryModelGemini(
       endTime: new Date(),
       completionStartTime: ttftMs > 0 ? new Date(start + ttftMs) : undefined,
       tools: convertToolsToLangfuse(toolSchemas as unknown[]),
+    })
+
+    const markerSummary = summarizeCacheControlMarkers({
+      tools: toolSchemas,
+      messages: messagesForAPI,
+    })
+    logEvent('tengu_api_success', {
+      model:
+        geminiModel as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      preNormalizedModel:
+        options.model as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      messageCount: messagesForAPI.length,
+      inputTokens: usage.input_tokens,
+      outputTokens: usage.output_tokens,
+      cachedInputTokens: usage.cache_read_input_tokens,
+      uncachedInputTokens: usage.cache_creation_input_tokens,
+      durationMs: Date.now() - start,
+      durationMsIncludingRetries: Date.now() - start,
+      ttftMs,
+      provider: 'gemini' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      querySource:
+        options.querySource as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      costUSD: 0,
+      ...buildCacheDiagnosticsMetadata({
+        usage,
+        querySource: options.querySource,
+        provider: 'gemini',
+        promptCacheEnabled: false,
+        markerSummary,
+      }),
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)

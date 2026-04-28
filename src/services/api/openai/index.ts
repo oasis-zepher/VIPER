@@ -26,6 +26,14 @@ import { calculateUSDCost } from '../../../utils/modelCost.js'
 import { isOpenAIThinkingEnabled, resolveOpenAIMaxTokens, buildOpenAIRequestBody } from './requestBody.js'
 import { recordLLMObservation } from '../../../services/langfuse/tracing.js'
 import { convertMessagesToLangfuse, convertOutputToLangfuse, convertToolsToLangfuse } from '../../../services/langfuse/convert.js'
+import {
+  type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+  logEvent,
+} from '../../../services/analytics/index.js'
+import {
+  buildCacheDiagnosticsMetadata,
+  summarizeCacheControlMarkers,
+} from '../cacheDiagnostics.js'
 export { isOpenAIThinkingEnabled, resolveOpenAIMaxTokens, buildOpenAIRequestBody }
 import { getModelMaxOutputTokens } from '../../../utils/context.js'
 import type { Options } from '../claude.js'
@@ -258,6 +266,7 @@ export async function* queryModelOpenAI(
       cache_read_input_tokens: 0,
     }
     let ttftMs = 0
+    let costUSD = 0
     const start = Date.now()
 
     for await (const event of adaptedStream) {
@@ -337,7 +346,7 @@ export async function* queryModelOpenAI(
           }
           // Track cost and token usage
           if (usage.input_tokens + usage.output_tokens > 0) {
-            const costUSD = calculateUSDCost(openaiModel, usage as any)
+            costUSD = calculateUSDCost(openaiModel, usage as any)
             addToTotalSessionCost(costUSD, usage as any, options.model)
           }
           break
@@ -368,6 +377,36 @@ export async function* queryModelOpenAI(
       endTime: new Date(),
       completionStartTime: ttftMs > 0 ? new Date(start + ttftMs) : undefined,
       tools: convertToolsToLangfuse(toolSchemas as unknown[]),
+    })
+
+    const markerSummary = summarizeCacheControlMarkers({
+      tools: toolSchemas,
+      messages: messagesForAPI,
+    })
+    logEvent('tengu_api_success', {
+      model:
+        openaiModel as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      preNormalizedModel:
+        options.model as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      messageCount: messagesForAPI.length,
+      inputTokens: usage.input_tokens,
+      outputTokens: usage.output_tokens,
+      cachedInputTokens: usage.cache_read_input_tokens,
+      uncachedInputTokens: usage.cache_creation_input_tokens,
+      durationMs: Date.now() - start,
+      durationMsIncludingRetries: Date.now() - start,
+      ttftMs,
+      provider: 'openai' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      querySource:
+        options.querySource as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      costUSD,
+      ...buildCacheDiagnosticsMetadata({
+        usage,
+        querySource: options.querySource,
+        provider: 'openai',
+        promptCacheEnabled: true,
+        markerSummary,
+      }),
     })
 
     // Safety: if stream ended without message_stop, assemble and yield whatever we have

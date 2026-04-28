@@ -16,6 +16,14 @@ import { addToTotalSessionCost } from '../../../cost-tracker.js'
 import { calculateUSDCost } from '../../../utils/modelCost.js'
 import { recordLLMObservation } from '../../../services/langfuse/tracing.js'
 import { convertMessagesToLangfuse, convertOutputToLangfuse, convertToolsToLangfuse } from '../../../services/langfuse/convert.js'
+import {
+  type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+  logEvent,
+} from '../../../services/analytics/index.js'
+import {
+  buildCacheDiagnosticsMetadata,
+  summarizeCacheControlMarkers,
+} from '../cacheDiagnostics.js'
 import type { Options } from '../claude.js'
 import { randomUUID } from 'crypto'
 import {
@@ -103,6 +111,7 @@ export async function* queryModelGrok(
       cache_read_input_tokens: 0,
     }
     let ttftMs = 0
+    let costUSD = 0
     const start = Date.now()
 
     for await (const event of adaptedStream) {
@@ -176,7 +185,7 @@ export async function* queryModelGrok(
       }
 
       if (event.type === 'message_stop' && usage.input_tokens + usage.output_tokens > 0) {
-        const costUSD = calculateUSDCost(grokModel, usage as any)
+        costUSD = calculateUSDCost(grokModel, usage as any)
         addToTotalSessionCost(costUSD, usage as any, options.model)
       }
 
@@ -203,6 +212,36 @@ export async function* queryModelGrok(
       endTime: new Date(),
       completionStartTime: ttftMs > 0 ? new Date(start + ttftMs) : undefined,
       tools: convertToolsToLangfuse(toolSchemas as unknown[]),
+    })
+
+    const markerSummary = summarizeCacheControlMarkers({
+      tools: toolSchemas,
+      messages: messagesForAPI,
+    })
+    logEvent('tengu_api_success', {
+      model:
+        grokModel as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      preNormalizedModel:
+        options.model as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      messageCount: messagesForAPI.length,
+      inputTokens: usage.input_tokens,
+      outputTokens: usage.output_tokens,
+      cachedInputTokens: usage.cache_read_input_tokens,
+      uncachedInputTokens: usage.cache_creation_input_tokens,
+      durationMs: Date.now() - start,
+      durationMsIncludingRetries: Date.now() - start,
+      ttftMs,
+      provider: 'grok' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      querySource:
+        options.querySource as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      costUSD,
+      ...buildCacheDiagnosticsMetadata({
+        usage,
+        querySource: options.querySource,
+        provider: 'grok',
+        promptCacheEnabled: false,
+        markerSummary,
+      }),
     })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)

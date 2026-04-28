@@ -36,6 +36,10 @@ import {
 } from '../analytics/index.js'
 import { sanitizeToolNameForAnalytics } from '../analytics/metadata.js'
 import { EMPTY_USAGE } from './emptyUsage.js'
+import {
+  buildCacheDiagnosticsMetadata,
+  type CacheDiagnosticsContext,
+} from './cacheDiagnostics.js'
 import { classifyAPIError } from './errors.js'
 import { extractConnectionErrorDetails } from './errorUtils.js'
 
@@ -421,6 +425,7 @@ function logAPISuccess({
   fastMode,
   previousRequestId,
   betas,
+  cacheDiagnostics,
 }: {
   model: string
   preNormalizedModel: string
@@ -447,6 +452,7 @@ function logAPISuccess({
   fastMode?: boolean
   previousRequestId?: string | null
   betas?: string[]
+  cacheDiagnostics?: CacheDiagnosticsContext
 }): void {
   const isNonInteractiveSession = getIsNonInteractiveSession()
   const isPostCompaction = consumePostCompaction()
@@ -459,6 +465,7 @@ function logAPISuccess({
     lastCompletion !== null ? now - lastCompletion : undefined
 
   const invocation = consumeInvokingRequestId()
+  const provider = getAPIProviderForStatsig()
 
   logEvent('tengu_api_success', {
     model: model as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -486,7 +493,7 @@ function logAPISuccess({
     attempt: attempt,
     ttftMs: ttftMs ?? undefined,
     buildAgeMins: getBuildAgeMinutes(),
-    provider: getAPIProviderForStatsig(),
+    provider,
     requestId:
       (requestId as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS) ??
       undefined,
@@ -571,6 +578,13 @@ function logAPISuccess({
         }
       : {}),
     ...(isPostCompaction ? { isPostCompaction } : {}),
+    ...buildCacheDiagnosticsMetadata({
+      usage,
+      querySource,
+      provider: provider as unknown as string,
+      promptCacheEnabled: cacheDiagnostics?.promptCacheEnabled,
+      markerSummary: cacheDiagnostics?.markerSummary,
+    }),
     ...getAnthropicEnvMetadata(),
     timeSinceLastApiCallMs,
   })
@@ -604,6 +618,7 @@ export function logAPISuccessAndDuration({
   fastMode,
   previousRequestId,
   betas,
+  cacheDiagnostics,
 }: {
   model: string
   preNormalizedModel: string
@@ -637,6 +652,7 @@ export function logAPISuccessAndDuration({
   /** Request ID from the previous API call in this session */
   previousRequestId?: string | null
   betas?: string[]
+  cacheDiagnostics?: CacheDiagnosticsContext
 }): void {
   const gateway = detectGateway({
     headers,
@@ -715,6 +731,7 @@ export function logAPISuccessAndDuration({
     fastMode,
     previousRequestId,
     betas,
+    cacheDiagnostics,
   })
   // Log API request event for OTLP
   void logOTelEvent('api_request', {

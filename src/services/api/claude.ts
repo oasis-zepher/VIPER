@@ -251,6 +251,10 @@ import {
   type NonNullableUsage,
 } from './logging.js'
 import {
+  summarizeCacheControlMarkers,
+  type CacheMarkerSummary,
+} from './cacheDiagnostics.js'
+import {
   CACHE_TTL_1HOUR_MS,
   checkResponseForCacheBreak,
   recordPromptState,
@@ -1571,6 +1575,7 @@ async function* queryModel(
   // Capture the betas sent in the last API request, including the ones that
   // were dynamically added, so we can log and send it to telemetry.
   let lastRequestBetas: string[] | undefined
+  let lastRequestCacheMarkerSummary: CacheMarkerSummary | undefined
 
   const paramsFromContext = (retryContext: RetryContext) => {
     const betasParams = [...betas]
@@ -1733,7 +1738,7 @@ async function* queryModel(
 
     lastRequestBetas = betasParams
 
-    return {
+    const requestParams = {
       model: normalizeModelStringForAPI(options.model),
       messages: addCacheBreakpoints(
         messagesForAPI,
@@ -1763,6 +1768,14 @@ async function* queryModel(
       }),
       ...(speed !== undefined && { speed }),
     }
+
+    lastRequestCacheMarkerSummary = summarizeCacheControlMarkers({
+      system: requestParams.system,
+      tools: requestParams.tools,
+      messages: requestParams.messages,
+    })
+
+    return requestParams
   }
 
   // Compute log scalars synchronously so the fire-and-forget .then() closure
@@ -2941,6 +2954,10 @@ async function* queryModel(
       fastMode: isFastModeRequest,
       previousRequestId,
       betas: lastRequestBetas,
+      cacheDiagnostics: {
+        promptCacheEnabled: enablePromptCaching,
+        markerSummary: lastRequestCacheMarkerSummary,
+      },
     })
   })
 

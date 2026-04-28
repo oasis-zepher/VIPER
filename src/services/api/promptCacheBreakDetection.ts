@@ -10,7 +10,11 @@ import { djb2Hash } from 'src/utils/hash.js'
 import { logError } from 'src/utils/log.js'
 import { getClaudeTempDir } from 'src/utils/permissions/filesystem.js'
 import { jsonStringify } from 'src/utils/slowOperations.js'
-import type { QuerySource } from '../../constants/querySource.js'
+import {
+  getPromptCacheTrackingKey,
+  getQuerySourceCacheDomain,
+  type QuerySource,
+} from '../../constants/querySource.js'
 import {
   type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
   logEvent,
@@ -106,14 +110,6 @@ const previousStateBySource = new Map<string, PreviousState>()
 // agentId key) causes the map to grow indefinitely.
 const MAX_TRACKED_SOURCES = 10
 
-const TRACKED_SOURCE_PREFIXES = [
-  'repl_main_thread',
-  'sdk',
-  'agent:custom',
-  'agent:default',
-  'agent:builtin',
-]
-
 // Minimum absolute token drop required to trigger a cache break warning.
 // Small drops (e.g., a few thousand tokens) can happen due to normal variation
 // and aren't worth alerting on.
@@ -131,30 +127,15 @@ function isExcludedModel(model: string): boolean {
 }
 
 /**
- * Returns the tracking key for a querySource, or null if untracked.
- * Compact shares the same server-side cache as repl_main_thread
- * (same cacheSafeParams), so they share tracking state.
- *
- * For subagents with a tracked querySource, uses the unique agentId to
- * isolate tracking state. This prevents false positive cache break
- * notifications when multiple instances of the same agent type run
- * concurrently.
- *
- * Untracked sources (speculation, session_memory, prompt_suggestion, etc.)
- * are short-lived forked agents where cache break detection provides no
- * value — they run 1-3 turns with a fresh agentId each time, so there's
- * nothing meaningful to compare against. Their cache metrics are still
- * logged via tengu_api_success for analytics.
+ * Returns the tracking key for reusable cache domains, or null for
+ * short-lived side queries/classifiers where per-call diagnostics are more
+ * useful than break comparisons.
  */
 function getTrackingKey(
   querySource: QuerySource,
   agentId?: AgentId,
 ): string | null {
-  if (querySource === 'compact') return 'repl_main_thread'
-  for (const prefix of TRACKED_SOURCE_PREFIXES) {
-    if (querySource.startsWith(prefix)) return agentId || querySource
-  }
-  return null
+  return getPromptCacheTrackingKey(querySource, agentId)
 }
 
 function stripCacheControl(
@@ -632,6 +613,10 @@ export async function checkResponseForCacheBreak(
         '') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       newGlobalCacheStrategy: (changes?.newGlobalCacheStrategy ??
         '') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+      cacheDomain:
+        getQuerySourceCacheDomain(
+          querySource,
+        ) as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       callNumber: state.callCount,
       prevCacheReadTokens: prevCacheRead,
       cacheReadTokens,

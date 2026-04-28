@@ -13,6 +13,10 @@ import {
 } from '../constants/system.js'
 import { logEvent } from '../services/analytics/index.js'
 import type { AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from '../services/analytics/metadata.js'
+import {
+  buildCacheDiagnosticsMetadata,
+  summarizeCacheControlMarkers,
+} from '../services/api/cacheDiagnostics.js'
 import { getAPIMetadata } from '../services/api/claude.js'
 import { getAnthropicClient } from '../services/api/client.js'
 import { createTrace, createChildSpan, endTrace, recordLLMObservation } from '../services/langfuse/index.js'
@@ -253,6 +257,11 @@ export async function sideQuery(opts: SideQueryOptions): Promise<BetaMessage> {
     (response as { _request_id?: string | null })._request_id ?? undefined
   const now = Date.now()
   const lastCompletion = getLastApiCompletionTimestamp()
+  const markerSummary = summarizeCacheControlMarkers({
+    system: systemBlocks,
+    tools: tools as BetaToolUnion[] | undefined,
+    messages,
+  })
   logEvent('tengu_api_success', {
     requestId:
       requestId as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -267,6 +276,13 @@ export async function sideQuery(opts: SideQueryOptions): Promise<BetaMessage> {
     durationMsIncludingRetries: now - start,
     timeSinceLastApiCallMs:
       lastCompletion !== null ? now - lastCompletion : undefined,
+    ...buildCacheDiagnosticsMetadata({
+      usage: response.usage,
+      querySource: opts.querySource,
+      provider,
+      promptCacheEnabled: markerSummary.totalCacheMarkers > 0,
+      markerSummary,
+    }),
   })
   setLastApiCompletionTimestamp(now)
 
