@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
-import { existsSync, statSync } from 'node:fs'
-import { readdir } from 'node:fs/promises'
+import { existsSync, readFileSync, statSync } from 'node:fs'
+import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const root = new URL('..', import.meta.url)
@@ -33,6 +33,17 @@ async function listLargestDistFiles(limit = 12) {
     .slice(0, limit)
 }
 
+async function readDistJavaScript() {
+  if (!existsSync(distPath)) return ''
+  const names = await readdir(distPath)
+  const chunks = await Promise.all(
+    names
+      .filter(name => name.endsWith('.js'))
+      .map(name => readFile(join(distPath, name), 'utf8').catch(() => '')),
+  )
+  return chunks.join('\n')
+}
+
 function runPackDryRun() {
   const result = spawnSync(
     'npm',
@@ -54,9 +65,18 @@ function countMatching(files, pattern) {
   return files.filter(file => pattern.test(file.path)).length
 }
 
+function countText(text, pattern) {
+  return text.match(pattern)?.length ?? 0
+}
+
 const pack = runPackDryRun()
 const files = pack.files ?? []
 const largest = await listLargestDistFiles()
+const distText = await readDistJavaScript()
+const postinstallPath = join(rootPath, 'scripts', 'postinstall.cjs')
+const postinstallText = existsSync(postinstallPath)
+  ? readFileSync(postinstallPath, 'utf8')
+  : ''
 
 console.log(`package: ${pack.name}@${pack.version}`)
 console.log(`tarball: ${formatBytes(pack.size)}`)
@@ -73,3 +93,14 @@ console.log(`  audio native files: ${countMatching(files, /^dist\/vendor\/audio-
 console.log(`  ripgrep files: ${countMatching(files, /^dist\/vendor\/ripgrep\//)}`)
 console.log(`  sentry/opentelemetry/langfuse chunks: ${countMatching(files, /(@sentry|@opentelemetry|@langfuse|sentry|opentelemetry|langfuse)/i)}`)
 console.log(`  highlight chunks: ${countMatching(files, /highlight/i)}`)
+console.log(`  stub command markers: ${countText(distText, /\bname:\s*["']stub["']/g)}`)
+console.log(`  snip/context no-op markers: ${countText(distText, /isSnipRuntimeEnabled|snipCompactIfNeeded|Context inspection requires|isContextCollapseEnabled/g)}`)
+console.log(`  direct-connect markers: ${countText(distText, /class\s+DirectConnectSessionManager|src\/server\/createDirectConnectSession|src\/server\/directConnectManager/g)}`)
+console.log(`  stale audio fallback markers: ${countText(distText, /\.\.\/audio-capture\//g)}`)
+console.log(
+  `  postinstall ripgrep downloader: ${
+    /RIPGREP_DOWNLOAD_BASE|microsoft\/ripgrep-prebuilt/.test(postinstallText)
+      ? 'present'
+      : 'absent'
+  }`,
+)

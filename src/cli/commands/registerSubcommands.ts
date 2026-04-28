@@ -10,10 +10,6 @@ import { isXaaEnabled } from '../../services/mcp/xaaIdpLogin.js'
 import { registerMcpAddCommand } from '../../commands/mcp/addCommand.js'
 import { registerMcpXaaIdpCommand } from '../../commands/mcp/xaaIdpCommand.js'
 import {
-  createDirectConnectSession,
-  DirectConnectError,
-} from '../../server/createDirectConnectSession.js'
-import {
   getOriginalCwd,
   setOriginalCwd,
   setCwdState,
@@ -328,6 +324,8 @@ export function registerSubcommands(
 				) => {
 					const { parseConnectUrl } =
 						await import("../../server/parseConnectUrl.js");
+					const { createDirectConnectSession, DirectConnectError } =
+						await import("../../server/createDirectConnectSession.js");
 					const { serverUrl, authToken } = parseConnectUrl(ccUrl);
 
 					let connectConfig;

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { feature } from 'bun:bundle'
 import type { ToolUseConfirm } from '../components/permissions/PermissionRequest.js'
 import type { RemotePermissionResponse } from '../remote/RemoteSessionManager.js'
 import {
@@ -9,8 +10,8 @@ import {
   convertSDKMessage,
   isSessionEndMessage,
 } from '../remote/sdkMessageAdapter.js'
-import {
-  type DirectConnectConfig,
+import type {
+  DirectConnectConfig,
   DirectConnectSessionManager,
 } from '../server/directConnectManager.js'
 import type { Tool } from '../Tool.js'
@@ -20,6 +21,14 @@ import type { PermissionAskDecision, PermissionUpdate } from '../types/permissio
 import { logForDebugging } from '../utils/debug.js'
 import { gracefulShutdown } from '../utils/gracefulShutdown.js'
 import type { RemoteMessageContent } from '../utils/teleport/api.js'
+
+/* eslint-disable @typescript-eslint/no-require-imports */
+const DirectConnectSessionManagerImpl: typeof DirectConnectSessionManager | null =
+  feature('DIRECT_CONNECT')
+    ? (require('../server/directConnectManager.js') as typeof import('../server/directConnectManager.js'))
+        .DirectConnectSessionManager
+    : null
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 type UseDirectConnectResult = {
   isRemoteMode: boolean
@@ -56,14 +65,14 @@ export function useDirectConnect({
   }, [tools])
 
   useEffect(() => {
-    if (!config) {
+    if (!config || !DirectConnectSessionManagerImpl) {
       return
     }
 
     hasReceivedInitRef.current = false
     logForDebugging(`[useDirectConnect] Connecting to ${config.wsUrl}`)
 
-    const manager = new DirectConnectSessionManager(config, {
+    const manager = new DirectConnectSessionManagerImpl(config, {
       onMessage: sdkMessage => {
         if (isSessionEndMessage(sdkMessage)) {
           setIsLoading(false)

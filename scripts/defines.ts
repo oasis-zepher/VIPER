@@ -51,8 +51,6 @@ export const DEFAULT_BUILD_FEATURES = [
     'ACP',
     // PR-package restored features
     'WORKFLOW_SCRIPTS',
-    'HISTORY_SNIP',
-    'CONTEXT_COLLAPSE',
     'MONITOR_TOOL',
     'FORK_SUBAGENT',
     // 'UDS_INBOX',

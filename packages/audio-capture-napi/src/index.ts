@@ -81,11 +81,11 @@ function loadModule(): AudioCaptureNapi | null {
     }
   }
 
-  // Candidates 2-5: bundled fallback, optional platform package, dev/source,
-  // and workspace layouts.
+  // Candidates 2-4: bundled fallback, optional platform package, and dev/source
+  // workspace layout.
   // In bundled output, require() resolves relative to cli.js at the package root.
-  // In dev, it resolves relative to this file. When loaded from a workspace
-  // package (packages/audio-capture-napi/src/), we need an absolute path fallback.
+  // In dev, this package is loaded from packages/audio-capture-napi/src/, so we
+  // need an absolute path fallback back to the workspace vendor directory.
   const platformDir = `${process.arch}-${platform}`
   const optionalPackage = getAudioCaptureOptionalPackageName(
     platform,
@@ -94,7 +94,6 @@ function loadModule(): AudioCaptureNapi | null {
   const fallbacks = [
     `./vendor/audio-capture/${platformDir}/audio-capture.node`,
     optionalPackage,
-    `../audio-capture/${platformDir}/audio-capture.node`,
     `${process.cwd()}/vendor/audio-capture/${platformDir}/audio-capture.node`,
   ].filter((p): p is string => p !== null)
   for (const p of fallbacks) {

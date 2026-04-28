@@ -410,11 +410,7 @@ import { resetAutoModeOptInForDefaultOffer } from "./migrations/resetAutoModeOpt
 import { resetProToOpusDefault } from "./migrations/resetProToOpusDefault.js";
 import { createRemoteSessionConfig } from "./remote/RemoteSessionManager.js";
 /* eslint-enable @typescript-eslint/no-require-imports */
-// teleportWithProgress dynamically imported at call site
-import {
-	createDirectConnectSession,
-	DirectConnectError,
-} from "./server/createDirectConnectSession.js";
+// teleportWithProgress and direct-connect helpers dynamically imported at call sites
 import { initializeLspServerManager } from "./services/lsp/manager.js";
 import { shouldEnablePromptSuggestion } from "./services/PromptSuggestion/promptSuggestion.js";
 import {
@@ -4217,6 +4213,8 @@ async function run(): Promise<CommanderCommand> {
 				}
 			} else if (feature("DIRECT_CONNECT") && _pendingConnect?.url) {
 				// `claude connect <url>` — full interactive TUI connected to a remote server
+				const { createDirectConnectSession, DirectConnectError } =
+					await import("./server/createDirectConnectSession.js");
 				let directConnectConfig;
 				try {
 					const session = await createDirectConnectSession({
