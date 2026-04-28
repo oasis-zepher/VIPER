@@ -1,0 +1,9 @@
+{
+  "name": "@claude-code-best/audio-capture-darwin-x64",
+  "version": "1.7.1",
+  "type": "commonjs",
+  "main": "./audio-capture.node",
+  "os": ["darwin"],
+  "cpu": ["x64"],
+  "files": ["audio-capture.node"]
+}

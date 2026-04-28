@@ -27,6 +27,31 @@ type AudioCaptureNapi = {
 let cachedModule: AudioCaptureNapi | null = null
 let loadAttempted = false
 
+export function getAudioCaptureOptionalPackageName(
+  platform: NodeJS.Platform,
+  arch: NodeJS.Architecture,
+): string | null {
+  if (platform === 'darwin' && arch === 'arm64') {
+    return '@claude-code-best/audio-capture-darwin-arm64'
+  }
+  if (platform === 'darwin' && arch === 'x64') {
+    return '@claude-code-best/audio-capture-darwin-x64'
+  }
+  if (platform === 'linux' && arch === 'arm64') {
+    return '@claude-code-best/audio-capture-linux-arm64'
+  }
+  if (platform === 'linux' && arch === 'x64') {
+    return '@claude-code-best/audio-capture-linux-x64'
+  }
+  if (platform === 'win32' && arch === 'arm64') {
+    return '@claude-code-best/audio-capture-win32-arm64'
+  }
+  if (platform === 'win32' && arch === 'x64') {
+    return '@claude-code-best/audio-capture-win32-x64'
+  }
+  return null
+}
+
 function loadModule(): AudioCaptureNapi | null {
   if (loadAttempted) {
     return cachedModule
@@ -56,16 +81,22 @@ function loadModule(): AudioCaptureNapi | null {
     }
   }
 
-  // Candidates 2-4: npm-install, dev/source, and workspace layouts.
+  // Candidates 2-5: bundled fallback, optional platform package, dev/source,
+  // and workspace layouts.
   // In bundled output, require() resolves relative to cli.js at the package root.
   // In dev, it resolves relative to this file. When loaded from a workspace
   // package (packages/audio-capture-napi/src/), we need an absolute path fallback.
   const platformDir = `${process.arch}-${platform}`
+  const optionalPackage = getAudioCaptureOptionalPackageName(
+    platform,
+    process.arch,
+  )
   const fallbacks = [
     `./vendor/audio-capture/${platformDir}/audio-capture.node`,
+    optionalPackage,
     `../audio-capture/${platformDir}/audio-capture.node`,
     `${process.cwd()}/vendor/audio-capture/${platformDir}/audio-capture.node`,
-  ]
+  ].filter((p): p is string => p !== null)
   for (const p of fallbacks) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

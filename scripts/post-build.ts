@@ -6,10 +6,9 @@
  * 2. Copy native addon files
  * 3. Generate dual entry points (cli-bun.js, cli-node.js)
  */
-import { readdir, readFile, writeFile, cp } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { chmodSync } from "node:fs";
 import { join } from "node:path";
-import { execSync } from "node:child_process";
 
 const outdir = "dist";
 
@@ -35,10 +34,32 @@ async function postBuild() {
     BUN_DESTRUCTURE.lastIndex = 0;
   }
 
-  // Step 2: Copy native addon files
-  const vendorDir = join(outdir, "vendor", "audio-capture");
-  await cp("vendor/audio-capture", vendorDir, { recursive: true } as never);
-  console.log(`Copied vendor/audio-capture/ → ${vendorDir}/`);
+  // Step 2: Optionally copy native addon files
+  const audioBundleMode = process.env.AUDIO_CAPTURE_BUNDLE ?? "none";
+  const audioPlatformDir = `${process.arch}-${process.platform}`;
+  if (audioBundleMode === "all") {
+    const vendorDir = join(outdir, "vendor", "audio-capture");
+    await cp("vendor/audio-capture", vendorDir, {
+      recursive: true,
+      dereference: true,
+    } as never);
+    console.log(`Copied vendor/audio-capture/ → ${vendorDir}/`);
+  } else if (audioBundleMode === "current") {
+    const sourceDir = join("vendor", "audio-capture", audioPlatformDir);
+    const vendorDir = join(outdir, "vendor", "audio-capture", audioPlatformDir);
+    await mkdir(vendorDir, { recursive: true });
+    await cp(sourceDir, vendorDir, {
+      recursive: true,
+      dereference: true,
+    } as never);
+    console.log(`Copied ${sourceDir}/ → ${vendorDir}/`);
+  } else if (audioBundleMode === "none") {
+    console.log("Skipped audio-capture native copy (AUDIO_CAPTURE_BUNDLE=none)");
+  } else {
+    throw new Error(
+      `Invalid AUDIO_CAPTURE_BUNDLE=${audioBundleMode}; expected none, current, or all`,
+    );
+  }
 
   // Step 3: Generate dual entry points
   const cliBun = join(outdir, "cli-bun.js");

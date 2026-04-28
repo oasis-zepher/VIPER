@@ -1,0 +1,9 @@
+{
+  "name": "@claude-code-best/audio-capture-linux-x64",
+  "version": "1.7.1",
+  "type": "commonjs",
+  "main": "./audio-capture.node",
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "files": ["audio-capture.node"]
+}

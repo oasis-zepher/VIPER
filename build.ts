@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile, cp } from 'fs/promises'
+import { cp, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { getMacroDefines } from './scripts/defines.ts'
 import { DEFAULT_BUILD_FEATURES } from './scripts/defines.ts'
@@ -75,10 +75,26 @@ console.log(
   `Bundled ${result.outputs.length} files to ${outdir}/ (patched ${patched} for import.meta.require, ${bunPatched} for Bun destructure)`,
 )
 
-// Step 4: Copy native .node addon files (audio-capture)
-const vendorDir = join(outdir, 'vendor', 'audio-capture')
-await cp('vendor/audio-capture', vendorDir, { recursive: true })
-console.log(`Copied vendor/audio-capture/ → ${vendorDir}/`)
+// Step 4: Optionally copy native .node addon files (audio-capture)
+const audioBundleMode = process.env.AUDIO_CAPTURE_BUNDLE ?? 'none'
+const audioPlatformDir = `${process.arch}-${process.platform}`
+if (audioBundleMode === 'all') {
+  const vendorDir = join(outdir, 'vendor', 'audio-capture')
+  await cp('vendor/audio-capture', vendorDir, { recursive: true, dereference: true })
+  console.log(`Copied vendor/audio-capture/ → ${vendorDir}/`)
+} else if (audioBundleMode === 'current') {
+  const sourceDir = join('vendor', 'audio-capture', audioPlatformDir)
+  const vendorDir = join(outdir, 'vendor', 'audio-capture', audioPlatformDir)
+  await mkdir(vendorDir, { recursive: true })
+  await cp(sourceDir, vendorDir, { recursive: true, dereference: true })
+  console.log(`Copied ${sourceDir}/ → ${vendorDir}/`)
+} else if (audioBundleMode === 'none') {
+  console.log('Skipped audio-capture native copy (AUDIO_CAPTURE_BUNDLE=none)')
+} else {
+  throw new Error(
+    `Invalid AUDIO_CAPTURE_BUNDLE=${audioBundleMode}; expected none, current, or all`,
+  )
+}
 
 // Step 5: Generate cli-bun and cli-node executable entry points
 const cliBun = join(outdir, 'cli-bun.js')
