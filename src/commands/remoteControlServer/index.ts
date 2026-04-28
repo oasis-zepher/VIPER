@@ -2,7 +2,8 @@ import { feature } from 'bun:bundle'
 import type { Command } from '../../commands.js'
 
 function isEnabled(): boolean {
-  return feature('DAEMON') && feature('BRIDGE_MODE')
+  if (!feature('DAEMON')) return false
+  return feature('BRIDGE_MODE') ? true : false
 }
 
 const remoteControlServer = {
