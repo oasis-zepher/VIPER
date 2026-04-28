@@ -1,4 +1,5 @@
 import { profileCheckpoint } from '../utils/startupProfiler.js'
+import { feature } from 'bun:bundle'
 import '../bootstrap/state.js'
 import '../utils/config.js'
 import type { Attributes, MetricOptions } from '@opentelemetry/api'
@@ -257,6 +258,10 @@ export const init = memoize(async (): Promise<void> => {
  * This should only be called once, after the trust dialog has been accepted.
  */
 export function initializeTelemetryAfterTrust(): void {
+  if (!feature('OBSERVABILITY')) {
+    return
+  }
+
   if (isEligibleForRemoteManagedSettings()) {
     // For SDK/headless mode with beta tracing, initialize eagerly first
     // to ensure the tracer is ready before the first query runs.
@@ -315,6 +320,10 @@ async function doInitializeTelemetry(): Promise<void> {
 }
 
 async function setMeterState(): Promise<void> {
+  if (!feature('OBSERVABILITY')) {
+    return
+  }
+
   // Lazy-load instrumentation to defer ~400KB of OpenTelemetry + protobuf
   const { initializeTelemetry } = await import(
     '../utils/telemetry/instrumentation.js'

@@ -189,21 +189,21 @@ describe('Langfuse integration', () => {
 
   describe('isLangfuseEnabled', () => {
     test('returns false when keys not configured', async () => {
-      const { isLangfuseEnabled } = await import('../client.js')
+      const { isLangfuseEnabled } = await import('../client.impl.js')
       expect(isLangfuseEnabled()).toBe(false)
     })
 
     test('returns true when both keys are set', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { isLangfuseEnabled } = await import('../client.js')
+      const { isLangfuseEnabled } = await import('../client.impl.js')
       expect(isLangfuseEnabled()).toBe(true)
     })
   })
 
   describe('initLangfuse', () => {
     test('returns false when keys not configured', async () => {
-      const { initLangfuse } = await import('../client.js')
+      const { initLangfuse } = await import('../client.impl.js')
       expect(initLangfuse()).toBe(false)
     })
 
@@ -211,14 +211,14 @@ describe('Langfuse integration', () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
       // client.js is a singleton — test via isLangfuseEnabled which reads env directly
-      const { isLangfuseEnabled } = await import('../client.js')
+      const { isLangfuseEnabled } = await import('../client.impl.js')
       expect(isLangfuseEnabled()).toBe(true)
     })
 
     test('is idempotent — multiple calls do not re-initialize', async () => {
       // client.js singleton: once processor is set, initLangfuse returns true immediately
       // We verify this by checking that calling it multiple times doesn't throw
-      const { initLangfuse } = await import('../client.js')
+      const { initLangfuse } = await import('../client.impl.js')
       expect(() => { initLangfuse(); initLangfuse() }).not.toThrow()
     })
   })
@@ -226,7 +226,7 @@ describe('Langfuse integration', () => {
   describe('shutdownLangfuse', () => {
     test('calls forceFlush and shutdown on processor', async () => {
       // Verify shutdown is callable without error even when no processor is set
-      const { shutdownLangfuse } = await import('../client.js')
+      const { shutdownLangfuse } = await import('../client.impl.js')
       await expect(shutdownLangfuse()).resolves.toBeUndefined()
     })
   })
@@ -235,7 +235,7 @@ describe('Langfuse integration', () => {
 
   describe('createTrace', () => {
     test('returns null when langfuse not enabled', async () => {
-      const { createTrace } = await import('../tracing.js')
+      const { createTrace } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       expect(span).toBeNull()
     })
@@ -243,7 +243,7 @@ describe('Langfuse integration', () => {
     test('creates root span when enabled', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace } = await import('../tracing.js')
+      const { createTrace } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty', input: [] })
       expect(span).not.toBeNull()
       expect(mockStartObservation).toHaveBeenCalledWith('agent-run', expect.objectContaining({
@@ -254,7 +254,7 @@ describe('Langfuse integration', () => {
 
   describe('recordLLMObservation', () => {
     test('no-ops when rootSpan is null', async () => {
-      const { recordLLMObservation } = await import('../tracing.js')
+      const { recordLLMObservation } = await import('../tracing.impl.js')
       recordLLMObservation(null, { model: 'm', provider: 'firstParty', input: [], output: [], usage: { input_tokens: 10, output_tokens: 5 } })
       expect(mockStartObservation).toHaveBeenCalledTimes(0)
     })
@@ -262,7 +262,7 @@ describe('Langfuse integration', () => {
     test('records generation child observation via global startObservation', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, recordLLMObservation } = await import('../tracing.js')
+      const { createTrace, recordLLMObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       mockStartObservation.mockClear()
       recordLLMObservation(span, {
@@ -288,7 +288,7 @@ describe('Langfuse integration', () => {
     test('includes cache tokens in usageDetails when provided', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, recordLLMObservation } = await import('../tracing.js')
+      const { createTrace, recordLLMObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       mockStartObservation.mockClear()
       mockRootUpdate.mockClear()
@@ -312,7 +312,7 @@ describe('Langfuse integration', () => {
     test('omits cache fields when not provided', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, recordLLMObservation } = await import('../tracing.js')
+      const { createTrace, recordLLMObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       mockRootUpdate.mockClear()
       recordLLMObservation(span, {
@@ -330,7 +330,7 @@ describe('Langfuse integration', () => {
 
   describe('recordToolObservation', () => {
     test('no-ops when rootSpan is null', async () => {
-      const { recordToolObservation } = await import('../tracing.js')
+      const { recordToolObservation } = await import('../tracing.impl.js')
       recordToolObservation(null, { toolName: 'BashTool', toolUseId: 'id1', input: {}, output: 'out' })
       // startObservation should not be called beyond the initial trace creation (none here)
     })
@@ -338,7 +338,7 @@ describe('Langfuse integration', () => {
     test('records tool child observation via global startObservation', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, recordToolObservation } = await import('../tracing.js')
+      const { createTrace, recordToolObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       mockStartObservation.mockClear()
       mockRootUpdate.mockClear()
@@ -363,7 +363,7 @@ describe('Langfuse integration', () => {
     test('passes startTime to global startObservation', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, recordToolObservation } = await import('../tracing.js')
+      const { createTrace, recordToolObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       mockStartObservation.mockClear()
       const startTime = new Date('2026-01-01T00:00:00Z')
@@ -383,7 +383,7 @@ describe('Langfuse integration', () => {
     test('sanitizes FileReadTool output', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, recordToolObservation } = await import('../tracing.js')
+      const { createTrace, recordToolObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       mockRootUpdate.mockClear()
       recordToolObservation(span, {
@@ -400,7 +400,7 @@ describe('Langfuse integration', () => {
     test('sets ERROR level for error observations', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, recordToolObservation } = await import('../tracing.js')
+      const { createTrace, recordToolObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       mockRootUpdate.mockClear()
       recordToolObservation(span, {
@@ -416,7 +416,7 @@ describe('Langfuse integration', () => {
 
   describe('endTrace', () => {
     test('no-ops when rootSpan is null', async () => {
-      const { endTrace } = await import('../tracing.js')
+      const { endTrace } = await import('../tracing.impl.js')
       endTrace(null)
       expect(mockRootEnd).not.toHaveBeenCalled()
     })
@@ -424,7 +424,7 @@ describe('Langfuse integration', () => {
     test('calls span.end()', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, endTrace } = await import('../tracing.js')
+      const { createTrace, endTrace } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       endTrace(span)
       expect(mockRootEnd).toHaveBeenCalled()
@@ -433,7 +433,7 @@ describe('Langfuse integration', () => {
     test('calls span.update() with output when provided', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, endTrace } = await import('../tracing.js')
+      const { createTrace, endTrace } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       endTrace(span, 'final output')
       expect(mockRootUpdate).toHaveBeenCalledWith({ output: 'final output' })
@@ -443,7 +443,7 @@ describe('Langfuse integration', () => {
 
   describe('createSubagentTrace', () => {
     test('returns null when langfuse not enabled', async () => {
-      const { createSubagentTrace } = await import('../tracing.js')
+      const { createSubagentTrace } = await import('../tracing.impl.js')
       const span = createSubagentTrace({
         sessionId: 's1',
         agentType: 'Explore',
@@ -457,7 +457,7 @@ describe('Langfuse integration', () => {
     test('creates trace with agentType and agentId metadata', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createSubagentTrace } = await import('../tracing.js')
+      const { createSubagentTrace } = await import('../tracing.impl.js')
       const span = createSubagentTrace({
         sessionId: 's1',
         agentType: 'Explore',
@@ -483,7 +483,7 @@ describe('Langfuse integration', () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
       mockStartObservation.mockImplementationOnce(() => { throw new Error('SDK error') })
-      const { createSubagentTrace } = await import('../tracing.js')
+      const { createSubagentTrace } = await import('../tracing.impl.js')
       const span = createSubagentTrace({
         sessionId: 's1',
         agentType: 'Plan',
@@ -499,7 +499,7 @@ describe('Langfuse integration', () => {
     test('includes querySource in metadata', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace } = await import('../tracing.js')
+      const { createTrace } = await import('../tracing.impl.js')
       const span = createTrace({
         sessionId: 's1',
         model: 'claude-3',
@@ -519,7 +519,7 @@ describe('Langfuse integration', () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
       mockStartObservation.mockClear()
-      const { createTrace } = await import('../tracing.js')
+      const { createTrace } = await import('../tracing.impl.js')
       createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       const calls = mockStartObservation.mock.calls as unknown[][]
       const secondArg = calls[0]?.[1] as Record<string, unknown> | undefined
@@ -533,7 +533,7 @@ describe('Langfuse integration', () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
       mockSetAttribute.mockClear()
-      const { createTrace } = await import('../tracing.js')
+      const { createTrace } = await import('../tracing.impl.js')
       const span = createTrace({
         sessionId: 's1',
         model: 'claude-3',
@@ -549,7 +549,7 @@ describe('Langfuse integration', () => {
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
       process.env.LANGFUSE_USER_ID = 'env-user@test.com'
       mockSetAttribute.mockClear()
-      const { createTrace } = await import('../tracing.js')
+      const { createTrace } = await import('../tracing.impl.js')
       const span = createTrace({
         sessionId: 's1',
         model: 'claude-3',
@@ -565,7 +565,7 @@ describe('Langfuse integration', () => {
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
       delete process.env.LANGFUSE_USER_ID
       mockSetAttribute.mockClear()
-      const { createTrace } = await import('../tracing.js')
+      const { createTrace } = await import('../tracing.impl.js')
       createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       // Falls back to getCoreUserData().deviceId (mocked as 'test-device-id')
       expect(mockSetAttribute).toHaveBeenCalledWith('user.id', 'test-device-id')
@@ -576,7 +576,7 @@ describe('Langfuse integration', () => {
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
       process.env.LANGFUSE_USER_ID = 'env-user@test.com'
       mockSetAttribute.mockClear()
-      const { createTrace } = await import('../tracing.js')
+      const { createTrace } = await import('../tracing.impl.js')
       createTrace({
         sessionId: 's1',
         model: 'claude-3',
@@ -596,7 +596,7 @@ describe('Langfuse integration', () => {
     test('sub-agent trace shares sessionId with parent', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, createSubagentTrace } = await import('../tracing.js')
+      const { createTrace, createSubagentTrace } = await import('../tracing.impl.js')
       mockSetAttribute.mockClear()
 
       // Create parent trace
@@ -632,7 +632,7 @@ describe('Langfuse integration', () => {
       // When langfuseTrace is already set, createTrace should NOT be called
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createSubagentTrace } = await import('../tracing.js')
+      const { createSubagentTrace } = await import('../tracing.impl.js')
 
       // Simulate what runAgent does: create subTrace, then pass it as langfuseTrace
       const subTrace = createSubagentTrace({
@@ -724,7 +724,7 @@ describe('Langfuse integration', () => {
     test('wraps input into { messages, tools } when tools provided', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, recordLLMObservation } = await import('../tracing.js')
+      const { createTrace, recordLLMObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       mockStartObservation.mockClear()
       const messages = [{ role: 'user', content: 'hello' }]
@@ -747,7 +747,7 @@ describe('Langfuse integration', () => {
     test('keeps input as-is when tools not provided', async () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
-      const { createTrace, recordLLMObservation } = await import('../tracing.js')
+      const { createTrace, recordLLMObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       mockStartObservation.mockClear()
       const messages = [{ role: 'user', content: 'hello' }]
@@ -769,7 +769,7 @@ describe('Langfuse integration', () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
       mockStartObservation.mockImplementationOnce(() => { throw new Error('SDK error') })
-      const { createTrace } = await import('../tracing.js')
+      const { createTrace } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       expect(span).toBeNull()
     })
@@ -778,7 +778,7 @@ describe('Langfuse integration', () => {
       process.env.LANGFUSE_PUBLIC_KEY = 'pk-test'
       process.env.LANGFUSE_SECRET_KEY = 'sk-test'
       mockStartObservation.mockImplementationOnce(() => { throw new Error('SDK error') })
-      const { createTrace, recordLLMObservation } = await import('../tracing.js')
+      const { createTrace, recordLLMObservation } = await import('../tracing.impl.js')
       const span = createTrace({ sessionId: 's1', model: 'claude-3', provider: 'firstParty' })
       // The second call to startObservation (for the generation) will throw
       mockStartObservation.mockImplementationOnce(() => { throw new Error('SDK error') })
