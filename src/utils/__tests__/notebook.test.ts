@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { NotebookCellSource } from "../../types/notebook";
 import { parseCellId, mapNotebookCellsToToolResult } from "../notebook";
 
 // ─── parseCellId ───────────────────────────────────────────────────────
@@ -50,7 +51,7 @@ describe("parseCellId", () => {
 
 describe("mapNotebookCellsToToolResult", () => {
   test("returns tool result with correct tool_use_id", () => {
-    const data = [
+    const data: NotebookCellSource[] = [
       {
         cellType: "code",
         source: 'print("hello")',
@@ -65,7 +66,7 @@ describe("mapNotebookCellsToToolResult", () => {
   });
 
   test("content array contains text blocks for cell content", () => {
-    const data = [
+    const data: NotebookCellSource[] = [
       {
         cellType: "code",
         source: 'x = 1',
@@ -85,7 +86,7 @@ describe("mapNotebookCellsToToolResult", () => {
   });
 
   test("merges adjacent text blocks from multiple cells", () => {
-    const data = [
+    const data: NotebookCellSource[] = [
       {
         cellType: "code",
         source: "a = 1",
@@ -109,7 +110,7 @@ describe("mapNotebookCellsToToolResult", () => {
   });
 
   test("preserves image blocks without merging", () => {
-    const data = [
+    const data: NotebookCellSource[] = [
       {
         cellType: "code",
         source: "plot()",
@@ -140,7 +141,7 @@ describe("mapNotebookCellsToToolResult", () => {
   });
 
   test("markdown cell includes cell_type metadata", () => {
-    const data = [
+    const data: NotebookCellSource[] = [
       {
         cellType: "markdown",
         source: "# Title",
@@ -154,7 +155,7 @@ describe("mapNotebookCellsToToolResult", () => {
   });
 
   test("non-python code cell includes language metadata", () => {
-    const data = [
+    const data: NotebookCellSource[] = [
       {
         cellType: "code",
         source: "val x = 1",

@@ -1,5 +1,6 @@
-// Auto-generated stub — replace with real implementation
-export type QueueOperationMessage = {
+export type QueueOperation = 'enqueue' | 'dequeue' | 'remove' | string
+
+export interface QueueOperationMessage {
   type: 'queue-operation'
   operation: QueueOperation
   timestamp: string
@@ -7,4 +8,3 @@ export type QueueOperationMessage = {
   content?: string
   [key: string]: unknown
 }
-export type QueueOperation = 'enqueue' | 'dequeue' | 'remove' | string;

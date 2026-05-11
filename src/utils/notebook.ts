@@ -67,14 +67,14 @@ function processOutput(output: NotebookCellOutput) {
     case 'display_data':
       return {
         output_type: output.output_type,
-        text: processOutputText(output.data?.['text/plain']),
-        image: output.data && extractImage(output.data),
+        text: processOutputText(output.data?.['text/plain'] as string | string[] | undefined),
+        image: output.data ? extractImage(output.data) : undefined,
       }
     case 'error':
       return {
         output_type: output.output_type,
         text: processOutputText(
-          `${output.ename}: ${output.evalue}\n${output.traceback.join('\n')}`,
+          `${output.ename}: ${output.evalue}\n${output.traceback?.join('\n') ?? ''}`,
         ),
       }
   }

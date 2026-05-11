@@ -1,2 +1,2 @@
-// Auto-generated stub — replace with real implementation
-export type AgentWizardData = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AgentWizardData = any

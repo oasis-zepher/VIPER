@@ -1,4 +1,7 @@
-// Auto-generated stub — replace with real implementation
-export type LspServerConfig = any;
-export type ScopedLspServerConfig = any;
-export type LspServerState = any;
+/** LSP integration types. Feature-gated. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type LspServerConfig = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ScopedLspServerConfig = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type LspServerState = any
