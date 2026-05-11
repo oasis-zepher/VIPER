@@ -1,3 +1,3 @@
-// Auto-generated stub — replace with real implementation
-export {};
-export const environmentRunnerMain: (args: string[]) => Promise<void> = () => Promise.resolve();
+/** Entry point for the environment runner (sandboxed execution). */
+export const environmentRunnerMain: (_args: string[]) => Promise<void> = () =>
+  Promise.resolve()

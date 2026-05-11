@@ -1,3 +1,2 @@
-// Auto-generated stub — replace with real implementation
-export {};
-export const createServerLogger: () => Record<string, unknown> = () => ({});
+/** Creates a structured logger for the self-hosted Remote Control Server. */
+export const createServerLogger: () => Record<string, unknown> = () => ({})

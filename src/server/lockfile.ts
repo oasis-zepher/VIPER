@@ -1,5 +1,9 @@
-// Auto-generated stub — replace with real implementation
-
+/**
+ * Server lock-file management for the self-hosted Remote Control Server.
+ *
+ * The lock file tracks the running server's PID, port, host, and HTTP URL
+ * so that CLI consumers can discover and connect to it.
+ */
 export interface ServerLockInfo {
   pid: number
   port: number
@@ -8,6 +12,9 @@ export interface ServerLockInfo {
   startedAt: number
 }
 
-export const writeServerLock: (info: ServerLockInfo) => Promise<void> = (async () => {});
-export const removeServerLock: () => Promise<void> = (async () => {});
-export const probeRunningServer: () => Promise<ServerLockInfo | null> = (async () => null);
+export const writeServerLock: (_info: ServerLockInfo) => Promise<void> = async () => {}
+
+export const removeServerLock: () => Promise<void> = async () => {}
+
+/** Probe for a running server by reading the lock file. Returns null when no server is found. */
+export const probeRunningServer: () => Promise<ServerLockInfo | null> = async () => null

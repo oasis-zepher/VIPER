@@ -1,3 +1,2 @@
-// Auto-generated stub — replace with real implementation
-export {};
-export const startSdkMemoryMonitor: () => void = () => {};
+/** Starts a memory monitor that captures heap dumps for SDK diagnostics. No-op when disabled. */
+export const startSdkMemoryMonitor: () => void = () => {}

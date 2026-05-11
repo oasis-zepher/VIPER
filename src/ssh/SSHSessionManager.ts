@@ -1,15 +1,18 @@
-// Auto-generated stub — replace with real implementation
+/**
+ * SSH session manager — manages lifecycle of an SSH-tunneled connection
+ * to a remote Claude Code instance for teleport-style remote execution.
+ */
 import type { SDKMessage } from '../entrypoints/sdk/coreTypes.js'
 import type { PermissionUpdate } from '../types/permissions.js'
 import type { RemoteMessageContent } from '../utils/teleport/api.js'
 
 export interface SSHSessionManagerOptions {
-  onMessage: (sdkMessage: SDKMessage) => void
-  onPermissionRequest: (request: SSHPermissionRequest, requestId: string) => void
+  onMessage: (_sdkMessage: SDKMessage) => void
+  onPermissionRequest: (_request: SSHPermissionRequest, _requestId: string) => void
   onConnected: () => void
-  onReconnecting: (attempt: number, max: number) => void
+  onReconnecting: (_attempt: number, _max: number) => void
   onDisconnected: () => void
-  onError: (error: Error) => void
+  onError: (_error: Error) => void
 }
 
 export interface SSHPermissionRequest {
@@ -24,7 +27,10 @@ export interface SSHPermissionRequest {
 export interface SSHSessionManager {
   connect(): void
   disconnect(): void
-  sendMessage(content: RemoteMessageContent): Promise<boolean>
+  sendMessage(_content: RemoteMessageContent): Promise<boolean>
   sendInterrupt(): void
-  respondToPermissionRequest(requestId: string, response: { behavior: string; message?: string; updatedInput?: unknown }): void
+  respondToPermissionRequest(
+    _requestId: string,
+    _response: { behavior: string; message?: string; updatedInput?: unknown },
+  ): void
 }

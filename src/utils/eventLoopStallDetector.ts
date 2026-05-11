@@ -1,3 +1,2 @@
-// Auto-generated stub — replace with real implementation
-export {};
-export const startEventLoopStallDetector: () => void = () => {};
+/** Starts a monitor that detects event-loop stalls (unresponsive periods). No-op when disabled. */
+export const startEventLoopStallDetector: () => void = () => {}

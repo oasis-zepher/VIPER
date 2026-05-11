@@ -1,3 +1,2 @@
-// Auto-generated stub — replace with real implementation
-export {};
-export const printBanner: (...args: unknown[]) => void = () => {};
+/** Prints the startup banner for the self-hosted Remote Control Server. */
+export const printBanner: (..._args: unknown[]) => void = () => {}

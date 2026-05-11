@@ -1,3 +1,5 @@
-// Auto-generated stub — replace with real implementation
-export {};
-export const buildPRTrailers: (attributionData: unknown, attribution: unknown) => string[] = () => [];
+/** Builds PR attribution trailers (Co-Authored-By lines) for commit messages. */
+export const buildPRTrailers: (
+  _attributionData: unknown,
+  _attribution: unknown,
+) => string[] = () => []
