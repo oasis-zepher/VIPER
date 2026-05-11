@@ -1081,6 +1081,85 @@ export async function reconcileSparseCheckout(
  * @param ref - Optional git branch or tag to checkout
  * @param onProgress - Optional callback to report progress
  */
+/**
+ * Download and extract an npm package containing a marketplace manifest.
+ *
+ * Uses `npm pack` to download the tarball, then extracts it into cachePath.
+ * The marketplace.json is expected at `package/.claude-plugin/marketplace.json`
+ * within the extracted directory.
+ */
+async function cacheMarketplaceFromNpm(
+  packageName: string,
+  cachePath: string,
+  onProgress?: MarketplaceProgressCallback,
+): Promise<void> {
+  const fs = getFsImplementation()
+  await fs.mkdir(cachePath)
+
+  safeCallProgress(onProgress, `Downloading npm package ${packageName}…`)
+
+  const packResult = await execFileNoThrow(
+    'npm',
+    ['pack', packageName, '--pack-destination', cachePath, '--json'],
+    { timeout: 60_000 },
+  )
+
+  if (packResult.code !== 0) {
+    const stderr = packResult.stderr?.trim() ?? ''
+    // npm pack --json writes the tarball info to stdout on success;
+    // on failure stdout may be empty and stderr has the error.
+    throw new Error(
+      `Failed to download npm package "${packageName}": ${stderr || 'unknown error'}`,
+    )
+  }
+
+  // npm pack --json outputs an array of { filename, size, ... } on stdout
+  let tarballName: string | undefined
+  try {
+    const parsed = jsonParse(packResult.stdout?.trim() ?? '') as Array<{ filename: string }>
+    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].filename) {
+      tarballName = parsed[0].filename
+    }
+  } catch {
+    // Fall back to scanning the directory for a .tgz file
+  }
+
+  if (!tarballName) {
+    const entries = await fs.readdir(cachePath)
+    tarballName = entries.find(e => e.name?.endsWith('.tgz'))?.name
+  }
+
+  if (!tarballName) {
+    throw new Error(
+      `Failed to locate downloaded tarball for npm package "${packageName}"`,
+    )
+  }
+
+  const tarballPath = join(cachePath, tarballName)
+
+  // Extract the tarball into cachePath
+  const tarResult = await execFileNoThrow(
+    'tar',
+    ['-xzf', tarballPath, '-C', cachePath],
+    { timeout: 30_000 },
+  )
+
+  // Remove the tarball after extraction
+  try {
+    await fs.unlink(tarballPath)
+  } catch {
+    // Best-effort cleanup
+  }
+
+  if (tarResult.code !== 0) {
+    throw new Error(
+      `Failed to extract npm package "${packageName}": ${tarResult.stderr?.trim() ?? 'unknown error'}`,
+    )
+  }
+
+  safeCallProgress(onProgress, `Cached marketplace from npm:${packageName}`)
+}
+
 async function cacheMarketplaceFromGit(
   gitUrl: string,
   cachePath: string,
@@ -1616,8 +1695,20 @@ async function loadAndCacheMarketplace(
       }
 
       case 'npm': {
-        // TODO: Implement npm package support
-        throw new Error('NPM marketplace sources not yet implemented')
+        temporaryCachePath = join(cacheDir, tempName)
+        cleanupNeeded = true
+        await cacheMarketplaceFromNpm(
+          source.package,
+          temporaryCachePath,
+          onProgress,
+        )
+        marketplacePath = join(
+          temporaryCachePath,
+          'package',
+          '.claude-plugin',
+          'marketplace.json',
+        )
+        break
       }
 
       case 'file': {
