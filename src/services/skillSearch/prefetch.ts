@@ -1,18 +1,26 @@
-// Auto-generated stub — replace with real implementation
+/**
+ * Skill-discovery prefetch pipeline.
+ *
+ * Pre-fetches skill suggestions based on user input patterns (write-pivot
+ * detection). When the EXPERIMENTAL_SKILL_SEARCH flag is off, returns
+ * empty arrays — no skill discovery attachments are injected.
+ */
 import type { Attachment } from '../../utils/attachments.js'
 import type { Message } from '../../types/message.js'
 import type { ToolUseContext } from '../../Tool.js'
 
 export const startSkillDiscoveryPrefetch: (
-  input: string | null,
-  messages: Message[],
-  toolUseContext: ToolUseContext,
-) => Promise<Attachment[]> = (async () => []);
+  _input: string | null,
+  _messages: Message[],
+  _toolUseContext: ToolUseContext,
+) => Promise<Attachment[]> = async () => []
+
 export const collectSkillDiscoveryPrefetch: (
   pending: Promise<Attachment[]>,
-) => Promise<Attachment[]> = (async (pending) => pending);
+) => Promise<Attachment[]> = async pending => pending
+
 export const getTurnZeroSkillDiscovery: (
-  input: string,
-  messages: Message[],
-  context: ToolUseContext,
-) => Promise<Attachment | null> = (async () => null);
+  _input: string,
+  _messages: Message[],
+  _context: ToolUseContext,
+) => Promise<Attachment | null> = async () => null

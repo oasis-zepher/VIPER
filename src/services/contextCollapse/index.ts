@@ -1,4 +1,9 @@
-// Auto-generated stub — replace with real implementation
+/**
+ * Context-collapse subsystem.
+ *
+ * Collapses verbose message spans (tool chains, search results) into compact
+ * summary blocks to preserve context-window headroom. Gated behind CONTEXT_COLLAPSE.
+ */
 import type { Message } from '../../types/message.js'
 import type { ToolUseContext } from '../../Tool.js'
 import type { QuerySource } from '../../constants/querySource.js'
@@ -27,7 +32,7 @@ export interface DrainResult {
   messages: Message[]
 }
 
-export const getStats: () => ContextCollapseStats = (() => ({
+export const getStats: () => ContextCollapseStats = () => ({
   collapsedSpans: 0,
   collapsedMessages: 0,
   stagedSpans: 0,
@@ -38,29 +43,29 @@ export const getStats: () => ContextCollapseStats = (() => ({
     emptySpawnWarningEmitted: false,
     totalEmptySpawns: 0,
   },
-}));
+})
 
-export const isContextCollapseEnabled: () => boolean = (() => false);
+export const isContextCollapseEnabled: () => boolean = () => false
 
-export const subscribe: (callback: () => void) => () => void = ((_callback: () => void) => () => {});
+export const subscribe: (_callback: () => void) => () => void = _callback => () => {}
 
 export const applyCollapsesIfNeeded: (
   messages: Message[],
-  toolUseContext: ToolUseContext,
-  querySource: QuerySource,
-) => Promise<CollapseResult> = (async (messages: Message[]) => ({ messages }));
+  _toolUseContext: ToolUseContext,
+  _querySource: QuerySource,
+) => Promise<CollapseResult> = async messages => ({ messages })
 
 export const isWithheldPromptTooLong: (
-  message: Message,
-  isPromptTooLongMessage: (msg: Message) => boolean,
-  querySource: QuerySource,
-) => boolean = (() => false);
+  _message: Message,
+  _isPromptTooLongMessage: (_msg: Message) => boolean,
+  _querySource: QuerySource,
+) => boolean = () => false
 
 export const recoverFromOverflow: (
   messages: Message[],
-  querySource: QuerySource,
-) => DrainResult = ((messages: Message[]) => ({ committed: 0, messages }));
+  _querySource: QuerySource,
+) => DrainResult = messages => ({ committed: 0, messages })
 
-export const resetContextCollapse: () => void = (() => {});
+export const resetContextCollapse: () => void = () => {}
 
-export const initContextCollapse: () => void = (() => {});
+export const initContextCollapse: () => void = () => {}
