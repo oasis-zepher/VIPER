@@ -400,8 +400,7 @@ export function useReplBridge(
                           tools: [],
                           mcpClients: [],
                           model: mainLoopModelRef.current,
-                          permissionMode: state.toolPermissionContext
-                            .mode as PermissionMode, // TODO: avoid the cast
+                          permissionMode: state.toolPermissionContext.mode,
                           // Remote clients can only invoke bridge-safe commands —
                           // advertising unsafe ones (local-jsx, unallowed local)
                           // would let mobile/web attempt them and hit errors.

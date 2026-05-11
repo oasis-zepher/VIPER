@@ -2297,6 +2297,8 @@ export async function* executeHooks({
         signal: abortSignal,
         hookIndex,
         toolUseContext,
+        pluginId,
+        pluginRoot,
       }).finally(cleanup)
       return
     }
@@ -3290,22 +3292,30 @@ export async function executeHooksOutsideREPL({
         }
       }
 
-      // TODO: Implement prompt stop hooks outside REPL
+      // prompt/agent hook types require an LLM context (REPL) to inject
+      // content or spawn agents. They cannot function in pipe/headless mode.
       if (hook.type === 'prompt') {
+        logForDebugging(
+          `${hookName}: prompt-type stop hook skipped outside REPL (no LLM context available)`,
+        )
         return {
           command: hook.prompt,
           succeeded: false,
-          output: 'Prompt stop hooks are not yet supported outside REPL',
+          output:
+            'Prompt stop hooks require interactive REPL context and are not supported in pipe/headless mode',
           blocked: false,
         }
       }
 
-      // TODO: Implement agent stop hooks outside REPL
       if (hook.type === 'agent') {
+        logForDebugging(
+          `${hookName}: agent-type stop hook skipped outside REPL (no agent runtime available)`,
+        )
         return {
           command: hook.prompt,
           succeeded: false,
-          output: 'Agent stop hooks are not yet supported outside REPL',
+          output:
+            'Agent stop hooks require interactive REPL context and are not supported in pipe/headless mode',
           blocked: false,
         }
       }
@@ -3633,6 +3643,8 @@ async function executeHookCallback({
   signal,
   hookIndex,
   toolUseContext,
+  pluginId,
+  pluginRoot,
 }: {
   toolUseID: string
   hook: HookCallback
@@ -3641,6 +3653,8 @@ async function executeHookCallback({
   signal: AbortSignal
   hookIndex?: number
   toolUseContext?: ToolUseContext
+  pluginId?: string
+  pluginRoot?: string
 }): Promise<HookResult> {
   // Create context for callbacks that need state access
   const context = toolUseContext
@@ -3666,8 +3680,7 @@ async function executeHookCallback({
   const processed = processHookJSONOutput({
     json,
     command: 'callback',
-    // TODO: If the hook came from a plugin, use the full path to the plugin for easier debugging
-    hookName: `${hookEvent}:Callback`,
+    hookName: pluginId ? `${hookEvent}:${pluginId}:Callback` : `${hookEvent}:Callback`,
     toolUseID,
     hookEvent,
     expectedHookEvent: hookEvent,
